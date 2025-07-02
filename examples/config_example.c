@@ -84,7 +84,6 @@ static void print_usage(const char *program_name)
 
 static void print_register_info(const xensiv_bgt60trxx_t *dev)
 {
-    int32_t result;
     uint32_t reg_value;
 
     printf("Register Information:\n");
@@ -101,7 +100,7 @@ static void print_register_info(const xensiv_bgt60trxx_t *dev)
     };
 
     for (size_t i = 0; i < sizeof(registers) / sizeof(registers[0]); i++) {
-        result = xensiv_bgt60trxx_get_reg(dev, registers[i].addr, &reg_value);
+        int32_t result = xensiv_bgt60trxx_get_reg(dev, registers[i].addr, &reg_value);
         if (result == XENSIV_BGT60TRXX_STATUS_OK) {
             printf("  %s (0x%02X): 0x%08X\n", registers[i].name, registers[i].addr, reg_value);
         } else {
