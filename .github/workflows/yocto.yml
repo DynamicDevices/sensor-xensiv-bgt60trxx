@@ -15,6 +15,8 @@ on:
         options:
           - kas/xensiv-bgt60trxx-test.yml
           - kas/xensiv-bgt60trxx-rpi4.yml
+          - kas/xensiv-bgt60trxx-test-scarthgap.yml
+          - kas/xensiv-bgt60trxx-rpi4-scarthgap.yml
 
 jobs:
   yocto-build:
@@ -22,12 +24,24 @@ jobs:
     strategy:
       matrix:
         config:
-          - name: "QEMU x86-64"
+          # Kirkstone LTS builds
+          - name: "QEMU x86-64 (Kirkstone)"
             file: "kas/xensiv-bgt60trxx-test.yml"
             machine: "qemux86-64"
-          - name: "Raspberry Pi 4"
+            yocto_version: "kirkstone"
+          - name: "Raspberry Pi 4 (Kirkstone)"
             file: "kas/xensiv-bgt60trxx-rpi4.yml"
             machine: "raspberrypi4-64"
+            yocto_version: "kirkstone"
+          # Scarthgap LTS builds
+          - name: "QEMU x86-64 (Scarthgap)"
+            file: "kas/xensiv-bgt60trxx-test-scarthgap.yml"
+            machine: "qemux86-64"
+            yocto_version: "scarthgap"
+          - name: "Raspberry Pi 4 (Scarthgap)"
+            file: "kas/xensiv-bgt60trxx-rpi4-scarthgap.yml"
+            machine: "raspberrypi4-64"
+            yocto_version: "scarthgap"
     
     steps:
       - name: Checkout repository
@@ -68,17 +82,19 @@ jobs:
         uses: actions/cache@v4
         with:
           path: downloads
-          key: yocto-downloads-${{ hashFiles('kas/*.yml', 'meta-xensiv-bgt60trxx/**/*.bb', 'meta-xensiv-bgt60trxx/**/*.bbappend') }}
+          key: yocto-downloads-${{ matrix.config.yocto_version }}-${{ hashFiles('kas/*.yml', 'meta-xensiv-bgt60trxx/**/*.bb', 'meta-xensiv-bgt60trxx/**/*.bbappend') }}
           restore-keys: |
+            yocto-downloads-${{ matrix.config.yocto_version }}-
             yocto-downloads-
 
       - name: Cache Yocto sstate
         uses: actions/cache@v4
         with:
           path: sstate-cache
-          key: yocto-sstate-${{ matrix.config.machine }}-${{ hashFiles('kas/*.yml', 'meta-xensiv-bgt60trxx/**/*.bb', 'meta-xensiv-bgt60trxx/**/*.bbappend', 'meta-xensiv-bgt60trxx/**/*.inc') }}
+          key: yocto-sstate-${{ matrix.config.yocto_version }}-${{ matrix.config.machine }}-${{ hashFiles('kas/*.yml', 'meta-xensiv-bgt60trxx/**/*.bb', 'meta-xensiv-bgt60trxx/**/*.bbappend', 'meta-xensiv-bgt60trxx/**/*.inc') }}
           restore-keys: |
-            yocto-sstate-${{ matrix.config.machine }}-
+            yocto-sstate-${{ matrix.config.yocto_version }}-${{ matrix.config.machine }}-
+            yocto-sstate-${{ matrix.config.yocto_version }}-
             yocto-sstate-
 
       - name: Cache Kas repositories
@@ -89,8 +105,9 @@ jobs:
             poky
             meta-openembedded
             meta-raspberrypi
-          key: kas-repos-${{ hashFiles('kas/*.yml') }}
+          key: kas-repos-${{ matrix.config.yocto_version }}-${{ hashFiles('kas/*.yml') }}
           restore-keys: |
+            kas-repos-${{ matrix.config.yocto_version }}-
             kas-repos-
 
       - name: Cache pip packages
@@ -191,7 +208,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: yocto-${{ matrix.config.machine }}-${{ github.run_number }}
+          name: yocto-${{ matrix.config.yocto_version }}-${{ matrix.config.machine }}-${{ github.run_number }}
           path: artifacts/
           retention-days: 30
 
@@ -225,6 +242,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Configuration:** ${{ matrix.config.file }}" >> $GITHUB_STEP_SUMMARY
           echo "**Target Machine:** ${{ matrix.config.machine }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Yocto Version:** ${{ matrix.config.yocto_version }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           if [ -d "build/tmp/deploy/images/${{ matrix.config.machine }}" ]; then

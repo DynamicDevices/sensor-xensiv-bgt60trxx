@@ -17,14 +17,27 @@ This directory contains [Kas](https://kas.readthedocs.io/) configuration files f
 
 ## Available Configurations
 
+This project supports **two Yocto LTS versions** for maximum compatibility:
+
+### Yocto LTS Versions
+
+| Version | Release | Status | Recommended For |
+|---------|---------|--------|-----------------|
+| **Kirkstone** | 4.0 LTS | Stable | Production deployments, proven stability |
+| **Scarthgap** | 5.0 LTS | Latest | New projects, latest features and security updates |
+
 ### 1. QEMU x86-64 Test Image
-**File**: `xensiv-bgt60trxx-test.yml`
+
+**Kirkstone LTS**: `xensiv-bgt60trxx-test.yml`
+**Scarthgap LTS**: `xensiv-bgt60trxx-test-scarthgap.yml`
 - **Target**: QEMU x86-64 virtual machine
 - **Purpose**: Development and testing
 - **Features**: Full development environment with debugging tools
 
 ### 2. Raspberry Pi 4 Image
-**File**: `xensiv-bgt60trxx-rpi4.yml`
+
+**Kirkstone LTS**: `xensiv-bgt60trxx-rpi4.yml`
+**Scarthgap LTS**: `xensiv-bgt60trxx-rpi4-scarthgap.yml`
 - **Target**: Raspberry Pi 4 (64-bit)
 - **Purpose**: Hardware testing with real SPI/GPIO interfaces
 - **Features**: SPI and GPIO enabled, device tree overlays
@@ -33,6 +46,7 @@ This directory contains [Kas](https://kas.readthedocs.io/) configuration files f
 
 ### Build QEMU Test Image
 
+**Kirkstone LTS (Stable):**
 ```bash
 # Clone the repository
 git clone https://github.com/DynamicDevices/sensor-xensiv-bgt60trxx.git
@@ -45,11 +59,31 @@ kas build kas/xensiv-bgt60trxx-test.yml
 kas shell kas/xensiv-bgt60trxx-test.yml -c "runqemu qemux86-64 nographic"
 ```
 
+**Scarthgap LTS (Latest):**
+```bash
+# Build the image with latest Yocto LTS
+kas build kas/xensiv-bgt60trxx-test-scarthgap.yml
+
+# Run in QEMU
+kas shell kas/xensiv-bgt60trxx-test-scarthgap.yml -c "runqemu qemux86-64 nographic"
+```
+
 ### Build Raspberry Pi 4 Image
 
+**Kirkstone LTS (Stable):**
 ```bash
 # Build the image
 kas build kas/xensiv-bgt60trxx-rpi4.yml
+
+# Flash to SD card (replace /dev/sdX with your SD card device)
+sudo dd if=build/tmp/deploy/images/raspberrypi4-64/xensiv-bgt60trxx-test-image-raspberrypi4-64.wic \
+        of=/dev/sdX bs=4M status=progress conv=fsync
+```
+
+**Scarthgap LTS (Latest):**
+```bash
+# Build the image with latest Yocto LTS
+kas build kas/xensiv-bgt60trxx-rpi4-scarthgap.yml
 
 # Flash to SD card (replace /dev/sdX with your SD card device)
 sudo dd if=build/tmp/deploy/images/raspberrypi4-64/xensiv-bgt60trxx-test-image-raspberrypi4-64.wic \
@@ -60,12 +94,22 @@ sudo dd if=build/tmp/deploy/images/raspberrypi4-64/xensiv-bgt60trxx-test-image-r
 
 For a clean, reproducible build environment:
 
+**Kirkstone LTS:**
 ```bash
 # Build with Docker
 kas-container build kas/xensiv-bgt60trxx-test.yml
 
 # Shell access with Docker
 kas-container shell kas/xensiv-bgt60trxx-test.yml
+```
+
+**Scarthgap LTS:**
+```bash
+# Build with Docker (latest LTS)
+kas-container build kas/xensiv-bgt60trxx-test-scarthgap.yml
+
+# Shell access with Docker
+kas-container shell kas/xensiv-bgt60trxx-test-scarthgap.yml
 ```
 
 ## Build Artifacts
