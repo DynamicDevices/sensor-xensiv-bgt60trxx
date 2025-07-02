@@ -7,7 +7,7 @@ distro: poky
 repos:
   poky:
     url: https://git.yoctoproject.org/poky
-    refspec: kirkstone
+    branch: kirkstone
     layers:
       meta:
       meta-poky:
@@ -15,7 +15,7 @@ repos:
 
   meta-openembedded:
     url: https://git.openembedded.org/meta-openembedded
-    refspec: kirkstone
+    branch: kirkstone
     layers:
       meta-oe:
       meta-python:

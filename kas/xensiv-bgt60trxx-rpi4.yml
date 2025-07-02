@@ -9,12 +9,23 @@ distro: poky
 target:
   - xensiv-bgt60trxx-test-image
 
+
 repos:
   meta-raspberrypi:
     url: https://git.yoctoproject.org/meta-raspberrypi
-    refspec: kirkstone
+    branch: kirkstone
     layers:
       meta-raspberrypi:
+
+  xensiv-bgt60trxx:
+    url: "."
+    branch: master
+    layers:
+      meta-xensiv-bgt60trxx:
+    layers:
+      meta-xensiv-bgt60trxx:
+    layers:
+      meta-xensiv-bgt60trxx:
 
   xensiv-bgt60trxx:
     url: .

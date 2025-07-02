@@ -12,13 +12,13 @@ target:
 repos:
   meta-raspberrypi:
     url: https://git.yoctoproject.org/meta-raspberrypi
-    refspec: scarthgap
+    branch: scarthgap
     layers:
       meta-raspberrypi:
 
   xensiv-bgt60trxx:
-    url: .
-    refspec: master
+    url: "."
+    branch: master
     layers:
       meta-xensiv-bgt60trxx:
 

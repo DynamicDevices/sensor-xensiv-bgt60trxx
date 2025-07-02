@@ -11,8 +11,8 @@ target:
 
 repos:
   xensiv-bgt60trxx:
-    url: .
-    refspec: master
+    url: "."
+    branch: master
     layers:
       meta-xensiv-bgt60trxx:
 
