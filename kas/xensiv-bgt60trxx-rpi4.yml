@@ -22,16 +22,6 @@ repos:
     branch: master
     layers:
       meta-xensiv-bgt60trxx:
-    layers:
-      meta-xensiv-bgt60trxx:
-    layers:
-      meta-xensiv-bgt60trxx:
-
-  xensiv-bgt60trxx:
-    url: .
-    refspec: master
-    layers:
-      meta-xensiv-bgt60trxx:
 
 local_conf_header:
   base: |
