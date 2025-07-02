@@ -55,6 +55,7 @@ jobs:
         cd build-debug
         CC=${{ matrix.cc }} CXX=${{ matrix.cxx }} cmake \
           -DCMAKE_BUILD_TYPE=Debug \
+          -DBUILD_SHARED_LIBS=OFF \
           -DBUILD_EXAMPLES=ON \
           -DBUILD_TESTS=ON \
           -DENABLE_LINUX_SUPPORT=ON \
@@ -72,6 +73,7 @@ jobs:
         cd build-release
         CC=${{ matrix.cc }} CXX=${{ matrix.cxx }} cmake \
           -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_SHARED_LIBS=OFF \
           -DBUILD_EXAMPLES=ON \
           -DBUILD_TESTS=ON \
           -DENABLE_LINUX_SUPPORT=ON \
