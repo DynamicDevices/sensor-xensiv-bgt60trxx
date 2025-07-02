@@ -65,7 +65,7 @@ jobs:
           echo "LANG=en_US.UTF-8" | sudo tee -a /etc/environment
 
       - name: Cache Yocto downloads
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             downloads
@@ -126,7 +126,7 @@ jobs:
           ls -la artifacts/
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: yocto-${{ matrix.config.machine }}-${{ github.run_number }}
           path: artifacts/

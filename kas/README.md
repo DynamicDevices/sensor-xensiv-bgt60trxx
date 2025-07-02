@@ -213,13 +213,13 @@ jobs:
   yocto-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Kas
         run: pip3 install kas
       - name: Build Image
         run: kas build --docker kas/xensiv-bgt60trxx-test.yml
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: yocto-image
           path: build/tmp/deploy/images/
