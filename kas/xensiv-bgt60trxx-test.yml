@@ -28,7 +28,7 @@ repos:
 
   xensiv-bgt60trxx:
     url: .
-    refspec: HEAD
+    refspec: master
     layers:
       xensiv: meta-xensiv-bgt60trxx
 
