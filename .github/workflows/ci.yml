@@ -212,12 +212,12 @@ jobs:
 
     - name: Test CMake build script
       run: |
-        ./build.sh --clean --enable-examples --debug
+        ./build.sh --clean --enable-examples -t Debug
         ./build.sh --clean --enable-examples
 
     - name: Test Autotools build script
       run: |
-        ./build.sh -s autotools --clean --enable-examples --debug
+        ./build.sh -s autotools --clean --enable-examples -t Debug
         ./build.sh -s autotools --clean --enable-examples
 
     - name: Test integration
