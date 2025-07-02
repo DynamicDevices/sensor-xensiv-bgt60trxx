@@ -1,4 +1,4 @@
-AC_INIT([xensiv-bgt60trxx], [1.0.0], [support@dynamicdevices.co.uk], [xensiv-bgt60trxx], [https://github.com/DynamicDevices/sensor-xensiv-bgt60trxx])
+AC_INIT([xensiv-bgt60trxx], [1.1.0], [support@dynamicdevices.co.uk], [xensiv-bgt60trxx], [https://github.com/DynamicDevices/sensor-xensiv-bgt60trxx])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_PROG_CC
 AC_PROG_RANLIB
