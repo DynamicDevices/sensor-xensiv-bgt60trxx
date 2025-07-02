@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 
 # Project configuration
 project(xensiv_bgt60trxx
-    VERSION 1.1.0
+    VERSION 1.1.1
     DESCRIPTION "XENSIV BGT60TRxx 60 GHz FMCW Radar Sensor Library"
     HOMEPAGE_URL "https://github.com/DynamicDevices/sensor-xensiv-bgt60trxx"
     LANGUAGES C
