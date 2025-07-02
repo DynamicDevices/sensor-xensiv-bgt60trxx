@@ -2,9 +2,9 @@ name: CI Build and Test
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, master, 'feature/*' ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, develop, master ]
   workflow_dispatch:
 
 jobs:
@@ -86,7 +86,7 @@ jobs:
     - name: Run integration test
       run: |
         cd build-release
-        gcc -I../. -o test_integration ../test_integration.c libxensiv_bgt60trxx.a
+        gcc -I../. -DXENSIV_BGT60TRXX_LINUX_SUPPORT -o test_integration ../test_integration.c libxensiv_bgt60trxx.a -lm -lpthread
         ./test_integration
 
     - name: Test examples help
@@ -161,7 +161,7 @@ jobs:
     - name: Run integration test
       run: |
         cd build-autotools-release
-        gcc -I../. -o test_integration ../test_integration.c .libs/libxensiv_bgt60trxx.a
+        gcc -I../. -DXENSIV_BGT60TRXX_LINUX_SUPPORT -o test_integration ../test_integration.c .libs/libxensiv_bgt60trxx.a -lm -lpthread
         ./test_integration
 
     - name: Test examples help
