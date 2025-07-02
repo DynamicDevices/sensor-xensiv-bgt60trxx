@@ -132,4 +132,4 @@ void xensiv_bgt60trxx_platform_assert(bool expr);
 
 /** \} group_board_libs_platform */
 
-#endif // ifndef XENSIV_BGT60TRXX_PLATFORM_H_
+#endif /* ifndef XENSIV_BGT60TRXX_PLATFORM_H_ */

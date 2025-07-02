@@ -107,6 +107,7 @@ jobs:
         cd build-memory
         cmake \
           -DCMAKE_BUILD_TYPE=Debug \
+          -DBUILD_SHARED_LIBS=OFF \
           -DCMAKE_C_FLAGS="-g -O0" \
           -DBUILD_EXAMPLES=ON \
           -DENABLE_LINUX_SUPPORT=ON \
@@ -116,7 +117,7 @@ jobs:
     - name: Run integration test with Valgrind
       run: |
         cd build-memory
-        gcc -g -O0 -I../. -o test_integration ../test_integration.c libxensiv_bgt60trxx.a
+        gcc -g -O0 -I../. -DXENSIV_BGT60TRXX_LINUX_SUPPORT -o test_integration ../test_integration.c libxensiv_bgt60trxx.a -lm -lpthread
         valgrind \
           --tool=memcheck \
           --leak-check=full \
