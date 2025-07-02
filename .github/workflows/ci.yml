@@ -163,7 +163,7 @@ jobs:
     - name: Run integration test
       run: |
         cd build-autotools-release
-        gcc -I../. -DXENSIV_BGT60TRXX_LINUX_SUPPORT -o test_integration ../test_integration.c .libs/libxensiv_bgt60trxx.a -lm -lpthread
+        gcc -I../. -DXENSIV_BGT60TRXX_LINUX_SUPPORT -o test_integration ../test_integration.c libxensiv_bgt60trxx.a -lm -lpthread
         ./test_integration
 
     - name: Test examples help
