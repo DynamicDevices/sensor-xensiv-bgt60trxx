@@ -78,7 +78,7 @@ jobs:
       - name: Build with Kas
         run: |
           export LANG=en_US.UTF-8
-          kas build --docker ${{ matrix.config.file }}
+          kas-container build ${{ matrix.config.file }}
         env:
           DOCKER_BUILDKIT: 1
 
@@ -86,13 +86,13 @@ jobs:
         if: matrix.config.machine == 'qemux86-64'
         run: |
           export LANG=en_US.UTF-8
-          kas shell --docker ${{ matrix.config.file }} -c "bitbake xensiv-bgt60trxx-test-image -c populate_sdk"
+          kas-container shell ${{ matrix.config.file }} -c "bitbake xensiv-bgt60trxx-test-image -c populate_sdk"
 
       - name: Test QEMU boot
         if: matrix.config.machine == 'qemux86-64'
         run: |
           export LANG=en_US.UTF-8
-          timeout 300 kas shell --docker ${{ matrix.config.file }} -c "runqemu qemux86-64 nographic" || true
+          timeout 300 kas-container shell ${{ matrix.config.file }} -c "runqemu qemux86-64 nographic" || true
 
       - name: Collect build artifacts
         run: |

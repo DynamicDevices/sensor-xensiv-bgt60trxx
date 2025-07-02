@@ -62,10 +62,10 @@ For a clean, reproducible build environment:
 
 ```bash
 # Build with Docker
-kas build --docker kas/xensiv-bgt60trxx-test.yml
+kas-container build kas/xensiv-bgt60trxx-test.yml
 
 # Shell access with Docker
-kas shell --docker kas/xensiv-bgt60trxx-test.yml
+kas-container shell kas/xensiv-bgt60trxx-test.yml
 ```
 
 ## Build Artifacts
@@ -217,7 +217,7 @@ jobs:
       - name: Install Kas
         run: pip3 install kas
       - name: Build Image
-        run: kas build --docker kas/xensiv-bgt60trxx-test.yml
+        run: kas-container build kas/xensiv-bgt60trxx-test.yml
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
