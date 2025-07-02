@@ -18,10 +18,10 @@ IndentPPDirectives: BeforeHash
 ColumnLimit: 100
 BreakBeforeBraces: Linux
 AllowShortFunctionsOnASingleLine: None
-AllowShortIfStatementsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
-AllowShortBlocksOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
 
 # Spacing
 SpaceAfterCStyleCast: true
@@ -35,10 +35,10 @@ SpaceBeforeAssignmentOperators: true
 
 # Alignment
 AlignAfterOpenBracket: Align
-AlignConsecutiveAssignments: false
-AlignConsecutiveDeclarations: false
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations: None
 AlignEscapedNewlines: Right
-AlignOperands: true
+AlignOperands: Align
 AlignTrailingComments: true
 
 # Pointer and reference alignment
@@ -55,33 +55,44 @@ ReflowComments: true
 SpacesBeforeTrailingComments: 2
 
 # Includes
-SortIncludes: true
+SortIncludes: CaseSensitive
 IncludeBlocks: Regroup
 IncludeCategories:
   # System headers
-  - Regex: '<[[:alnum:]._]+>'
+  - Regex: '^<.*\.h>'
     Priority: 1
-  # Project headers
-  - Regex: '"xensiv_.*"'
+  # C standard library headers
+  - Regex: '^<[^.]*>'
     Priority: 2
-  # Other local headers
-  - Regex: '".*"'
+  # Project headers
+  - Regex: '^".*"'
     Priority: 3
 
-# Penalties (for line breaking decisions)
-PenaltyBreakAssignment: 100
-PenaltyBreakBeforeFirstCallParameter: 50
+# Miscellaneous
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 2
+PenaltyBreakBeforeFirstCallParameter: 100
 PenaltyBreakComment: 300
 PenaltyBreakFirstLessLess: 120
 PenaltyBreakString: 1000
 PenaltyExcessCharacter: 1000000
 PenaltyReturnTypeOnItsOwnLine: 200
 
-# Other formatting options
-KeepEmptyLinesAtTheStartOfBlocks: false
-MaxEmptyLinesToKeep: 2
+# Embedded C specific
+AlwaysBreakAfterReturnType: None
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeColon
+BreakInheritanceList: BeforeColon
 CompactNamespaces: false
-FixNamespaceComments: false
-
-# Experimental features
-ExperimentalAutoDetectBinPacking: false
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ConstructorInitializerIndentWidth: 4
+Cpp11BracedListStyle: true
+FixNamespaceComments: true
+ForEachMacros: []
+NamespaceIndentation: None
+SortUsingDeclarations: true
+SpaceAfterTemplateKeyword: true
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeRangeBasedForLoopColon: true
