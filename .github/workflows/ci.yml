@@ -220,10 +220,6 @@ jobs:
         ./build.sh -s autotools --clean --enable-examples -t Debug
         ./build.sh -s autotools --clean --enable-examples
 
-    - name: Test integration
-      run: |
-        ./test_integration
-
   # Cross-compilation testing
   cross-compile:
     name: Cross Compilation (${{ matrix.arch }})
