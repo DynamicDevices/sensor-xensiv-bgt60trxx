@@ -1,0 +1,58 @@
+---
+# XENSIV BGT60TRxx Library Static Analysis Configuration
+# Clang-tidy configuration for embedded C development
+
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  hicpp-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-implicit-widening-of-multiplication-result,
+  -cert-dcl03-c,
+  -cert-dcl37-c,
+  -cert-dcl51-cpp,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-init-variables,
+  -hicpp-avoid-magic-numbers,
+  -hicpp-init-variables,
+  -misc-unused-parameters,
+  -modernize-*,
+  -readability-magic-numbers,
+  -readability-function-cognitive-complexity,
+  -readability-identifier-length
+
+CheckOptions:
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-identifier-naming.FunctionCase
+    value: lower_case
+  - key: readability-identifier-naming.MacroCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.EnumCase
+    value: lower_case
+  - key: readability-identifier-naming.StructCase
+    value: lower_case
+  - key: readability-identifier-naming.TypedefCase
+    value: lower_case
+  - key: readability-identifier-naming.ConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: UPPER_CASE
+  - key: readability-function-size.LineThreshold
+    value: 150
+  - key: readability-function-size.StatementThreshold
+    value: 100
+  - key: performance-unnecessary-value-param.AllowedTypes
+    value: 'xensiv_bgt60trxx_.*'
+
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*'
+FormatStyle: file

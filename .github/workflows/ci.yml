@@ -1,0 +1,436 @@
+name: CI Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  # CMake builds across multiple platforms
+  cmake-build:
+    name: CMake Build (${{ matrix.os }}, ${{ matrix.compiler }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04, ubuntu-22.04]
+        compiler: [gcc, clang]
+        include:
+          - os: ubuntu-20.04
+            compiler: gcc
+            cc: gcc-9
+            cxx: g++-9
+          - os: ubuntu-20.04
+            compiler: clang
+            cc: clang-10
+            cxx: clang++-10
+          - os: ubuntu-22.04
+            compiler: gcc
+            cc: gcc-11
+            cxx: g++-11
+          - os: ubuntu-22.04
+            compiler: clang
+            cc: clang-14
+            cxx: clang++-14
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          pkg-config \
+          ${{ matrix.cc }} \
+          ${{ matrix.cxx }}
+
+    - name: Configure CMake (Debug)
+      run: |
+        mkdir build-debug
+        cd build-debug
+        CC=${{ matrix.cc }} CXX=${{ matrix.cxx }} cmake \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DBUILD_EXAMPLES=ON \
+          -DBUILD_TESTS=ON \
+          -DENABLE_LINUX_SUPPORT=ON \
+          -DENABLE_MTB_SUPPORT=OFF \
+          ..
+
+    - name: Build (Debug)
+      run: |
+        cd build-debug
+        make -j$(nproc)
+
+    - name: Configure CMake (Release)
+      run: |
+        mkdir build-release
+        cd build-release
+        CC=${{ matrix.cc }} CXX=${{ matrix.cxx }} cmake \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_EXAMPLES=ON \
+          -DBUILD_TESTS=ON \
+          -DENABLE_LINUX_SUPPORT=ON \
+          -DENABLE_MTB_SUPPORT=OFF \
+          ..
+
+    - name: Build (Release)
+      run: |
+        cd build-release
+        make -j$(nproc)
+
+    - name: Run integration test
+      run: |
+        cd build-release
+        gcc -I../. -o test_integration ../test_integration.c libxensiv_bgt60trxx.a
+        ./test_integration
+
+    - name: Test examples help
+      run: |
+        cd build-release/examples
+        ./basic_example --help || true
+        ./fifo_example --help || true
+        ./config_example --help || true
+
+    - name: Test installation
+      run: |
+        cd build-release
+        sudo make install
+        pkg-config --exists xensiv_bgt60trxx
+        pkg-config --modversion xensiv_bgt60trxx
+
+  # Autotools builds
+  autotools-build:
+    name: Autotools Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04, ubuntu-22.04]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          autoconf \
+          automake \
+          libtool \
+          pkg-config
+
+    - name: Generate configure script
+      run: |
+        autoreconf -fiv
+
+    - name: Configure (Debug)
+      run: |
+        mkdir build-autotools-debug
+        cd build-autotools-debug
+        ../configure \
+          --enable-examples \
+          --enable-debug \
+          --prefix=/tmp/xensiv-debug
+
+    - name: Build (Debug)
+      run: |
+        cd build-autotools-debug
+        make -j$(nproc)
+
+    - name: Configure (Release)
+      run: |
+        mkdir build-autotools-release
+        cd build-autotools-release
+        ../configure \
+          --enable-examples \
+          --disable-debug \
+          --prefix=/tmp/xensiv-release
+
+    - name: Build (Release)
+      run: |
+        cd build-autotools-release
+        make -j$(nproc)
+
+    - name: Run integration test
+      run: |
+        cd build-autotools-release
+        gcc -I../. -o test_integration ../test_integration.c .libs/libxensiv_bgt60trxx.a
+        ./test_integration
+
+    - name: Test examples help
+      run: |
+        cd build-autotools-release/examples
+        ./basic_example --help || true
+        ./fifo_example --help || true
+        ./config_example --help || true
+
+    - name: Test installation
+      run: |
+        cd build-autotools-release
+        make install
+        PKG_CONFIG_PATH=/tmp/xensiv-release/lib/pkgconfig pkg-config --exists xensiv_bgt60trxx
+        PKG_CONFIG_PATH=/tmp/xensiv-release/lib/pkgconfig pkg-config --modversion xensiv_bgt60trxx
+
+    - name: Test distribution
+      run: |
+        cd build-autotools-release
+        make dist
+        ls -la *.tar.gz
+
+  # Build script testing
+  build-script-test:
+    name: Build Script Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04, ubuntu-22.04]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          autoconf \
+          automake \
+          libtool \
+          pkg-config
+
+    - name: Test CMake build script
+      run: |
+        ./build.sh --clean --examples --debug
+        ./build.sh --clean --examples
+
+    - name: Test Autotools build script
+      run: |
+        ./build.sh -s autotools --clean --examples --debug
+        ./build.sh -s autotools --clean --examples
+
+    - name: Test integration
+      run: |
+        ./test_integration
+
+  # Cross-compilation testing
+  cross-compile:
+    name: Cross Compilation (${{ matrix.arch }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [armhf, arm64]
+        include:
+          - arch: armhf
+            gcc_pkg: gcc-arm-linux-gnueabihf
+            toolchain_prefix: arm-linux-gnueabihf
+          - arch: arm64
+            gcc_pkg: gcc-aarch64-linux-gnu
+            toolchain_prefix: aarch64-linux-gnu
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install cross-compilation tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          pkg-config \
+          ${{ matrix.gcc_pkg }}
+
+    - name: Cross-compile with CMake
+      run: |
+        mkdir build-cross-${{ matrix.arch }}
+        cd build-cross-${{ matrix.arch }}
+        cmake \
+          -DCMAKE_SYSTEM_NAME=Linux \
+          -DCMAKE_C_COMPILER=${{ matrix.toolchain_prefix }}-gcc \
+          -DCMAKE_CXX_COMPILER=${{ matrix.toolchain_prefix }}-g++ \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_EXAMPLES=ON \
+          -DENABLE_LINUX_SUPPORT=ON \
+          -DENABLE_MTB_SUPPORT=OFF \
+          ..
+        make -j$(nproc)
+
+    - name: Verify cross-compiled binaries
+      run: |
+        cd build-cross-${{ matrix.arch }}
+        file libxensiv_bgt60trxx.a
+        file examples/basic_example
+
+  # Static analysis
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          pkg-config \
+          cppcheck \
+          clang-tools
+
+    - name: Run cppcheck
+      run: |
+        cppcheck \
+          --enable=all \
+          --error-exitcode=1 \
+          --suppress=missingIncludeSystem \
+          --suppress=unusedFunction \
+          --suppress=unmatchedSuppression \
+          --inline-suppr \
+          --std=c99 \
+          *.c *.h examples/*.c
+
+    - name: Build with strict warnings
+      run: |
+        mkdir build-strict
+        cd build-strict
+        cmake \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_C_FLAGS="-Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter" \
+          -DBUILD_EXAMPLES=ON \
+          -DENABLE_LINUX_SUPPORT=ON \
+          ..
+        make -j$(nproc)
+
+  # Documentation check
+  documentation:
+    name: Documentation Check
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check README
+      run: |
+        # Check that README exists and has content
+        test -f README.md
+        test -s README.md
+        # Check for key sections
+        grep -q "Quick Start" README.md
+        grep -q "Usage Examples" README.md
+        grep -q "Yocto Integration" README.md
+
+    - name: Check documentation files
+      run: |
+        test -f FINAL_STATUS.md
+        test -f IMPLEMENTATION_SUMMARY.md
+        test -f LICENSE
+        test -f EULA
+
+    - name: Validate example help output
+      run: |
+        mkdir build-doc
+        cd build-doc
+        cmake -DBUILD_EXAMPLES=ON ..
+        make -j$(nproc)
+        # Test that examples show help (exit code may be non-zero but should produce output)
+        ./examples/basic_example --help > help_output.txt 2>&1 || true
+        test -s help_output.txt
+        grep -q "Usage:" help_output.txt
+
+  # Package validation
+  package-validation:
+    name: Package Validation
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          pkg-config
+
+    - name: Test pkg-config integration
+      run: |
+        mkdir build-pkg
+        cd build-pkg
+        cmake -DCMAKE_INSTALL_PREFIX=/tmp/test-install ..
+        make -j$(nproc)
+        make install
+        
+        # Test pkg-config
+        PKG_CONFIG_PATH=/tmp/test-install/lib/pkgconfig pkg-config --exists xensiv_bgt60trxx
+        PKG_CONFIG_PATH=/tmp/test-install/lib/pkgconfig pkg-config --cflags xensiv_bgt60trxx
+        PKG_CONFIG_PATH=/tmp/test-install/lib/pkgconfig pkg-config --libs xensiv_bgt60trxx
+
+    - name: Test CMake find_package
+      run: |
+        # Create a test project that uses find_package
+        mkdir test-project
+        cd test-project
+        cat > CMakeLists.txt << 'EOF'
+        cmake_minimum_required(VERSION 3.12)
+        project(test_app)
+        find_package(xensiv_bgt60trxx REQUIRED)
+        add_executable(test_app test.c)
+        target_link_libraries(test_app xensiv_bgt60trxx::xensiv_bgt60trxx)
+        EOF
+        
+        cat > test.c << 'EOF'
+        #include "xensiv_bgt60trxx.h"
+        int main() { return 0; }
+        EOF
+        
+        CMAKE_PREFIX_PATH=/tmp/test-install cmake .
+        make
+
+  # Yocto recipe validation
+  yocto-validation:
+    name: Yocto Recipe Validation
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Validate BitBake recipes
+      run: |
+        # Check that Yocto files exist and have basic structure
+        test -f yocto/xensiv-bgt60trxx_1.0.0.bb
+        test -f yocto/xensiv-bgt60trxx_git.bb
+        test -f yocto/xensiv-bgt60trxx.conf
+        
+        # Check for required BitBake variables
+        grep -q "SUMMARY" yocto/xensiv-bgt60trxx_1.0.0.bb
+        grep -q "LICENSE" yocto/xensiv-bgt60trxx_1.0.0.bb
+        grep -q "SRC_URI" yocto/xensiv-bgt60trxx_1.0.0.bb
+        grep -q "inherit cmake" yocto/xensiv-bgt60trxx_1.0.0.bb
+        
+        # Check git recipe
+        grep -q "SRCREV.*AUTOREV" yocto/xensiv-bgt60trxx_git.bb
+        grep -q "PV.*git" yocto/xensiv-bgt60trxx_git.bb
+
+    - name: Validate repository URLs
+      run: |
+        # Check that all repository URLs point to the correct fork
+        grep -q "github.com/DynamicDevices/sensor-xensiv-bgt60trxx" yocto/xensiv-bgt60trxx_1.0.0.bb
+        grep -q "github.com/DynamicDevices/sensor-xensiv-bgt60trxx" yocto/xensiv-bgt60trxx_git.bb

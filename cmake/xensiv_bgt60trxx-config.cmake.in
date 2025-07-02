@@ -1,0 +1,29 @@
+@PACKAGE_INIT@
+
+# XENSIV BGT60TRxx CMake Configuration File
+# This file provides configuration information for the XENSIV BGT60TRxx library
+
+set(XENSIV_BGT60TRXX_VERSION "@PROJECT_VERSION@")
+
+# Check if the library was built with specific features
+set(XENSIV_BGT60TRXX_LINUX_SUPPORT @ENABLE_LINUX_SUPPORT@)
+set(XENSIV_BGT60TRXX_MTB_SUPPORT @ENABLE_MTB_SUPPORT@)
+
+# Include the targets file
+include("${CMAKE_CURRENT_LIST_DIR}/xensiv_bgt60trxx-targets.cmake")
+
+# Set the library variables for compatibility
+set(XENSIV_BGT60TRXX_LIBRARIES xensiv_bgt60trxx::xensiv_bgt60trxx)
+set(XENSIV_BGT60TRXX_INCLUDE_DIRS "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+
+# Provide information about the library configuration
+if(XENSIV_BGT60TRXX_LINUX_SUPPORT)
+    message(STATUS "XENSIV BGT60TRxx: Linux platform support enabled")
+endif()
+
+if(XENSIV_BGT60TRXX_MTB_SUPPORT)
+    message(STATUS "XENSIV BGT60TRxx: ModusToolbox platform support enabled")
+endif()
+
+# Check that all required components are available
+check_required_components(xensiv_bgt60trxx)

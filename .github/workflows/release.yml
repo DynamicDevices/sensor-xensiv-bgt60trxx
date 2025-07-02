@@ -1,0 +1,164 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [published]
+
+jobs:
+  release-build:
+    name: Release Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, ubuntu-22.04]
+        include:
+          - os: ubuntu-20.04
+            artifact_name: ubuntu-20.04
+          - os: ubuntu-22.04
+            artifact_name: ubuntu-22.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          autoconf \
+          automake \
+          libtool \
+          pkg-config
+
+    - name: Get version from tag
+      id: get_version
+      run: |
+        if [[ $GITHUB_REF == refs/tags/* ]]; then
+          VERSION=${GITHUB_REF#refs/tags/v}
+        else
+          VERSION="dev-$(git rev-parse --short HEAD)"
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Build with CMake
+      run: |
+        mkdir build-cmake
+        cd build-cmake
+        cmake \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_EXAMPLES=ON \
+          -DENABLE_LINUX_SUPPORT=ON \
+          -DCMAKE_INSTALL_PREFIX=/tmp/xensiv-cmake-${{ steps.get_version.outputs.version }} \
+          ..
+        make -j$(nproc)
+        make install
+
+    - name: Build with Autotools
+      run: |
+        autoreconf -fiv
+        mkdir build-autotools
+        cd build-autotools
+        ../configure \
+          --enable-examples \
+          --prefix=/tmp/xensiv-autotools-${{ steps.get_version.outputs.version }}
+        make -j$(nproc)
+        make install
+        make dist
+
+    - name: Create release archives
+      run: |
+        cd /tmp
+        tar -czf xensiv-bgt60trxx-cmake-${{ steps.get_version.outputs.version }}-${{ matrix.artifact_name }}.tar.gz \
+          xensiv-cmake-${{ steps.get_version.outputs.version }}/
+        tar -czf xensiv-bgt60trxx-autotools-${{ steps.get_version.outputs.version }}-${{ matrix.artifact_name }}.tar.gz \
+          xensiv-autotools-${{ steps.get_version.outputs.version }}/
+
+    - name: Upload CMake build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: cmake-build-${{ matrix.artifact_name }}
+        path: /tmp/xensiv-bgt60trxx-cmake-${{ steps.get_version.outputs.version }}-${{ matrix.artifact_name }}.tar.gz
+
+    - name: Upload Autotools build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: autotools-build-${{ matrix.artifact_name }}
+        path: /tmp/xensiv-bgt60trxx-autotools-${{ steps.get_version.outputs.version }}-${{ matrix.artifact_name }}.tar.gz
+
+    - name: Upload source distribution
+      uses: actions/upload-artifact@v4
+      if: matrix.os == 'ubuntu-22.04'
+      with:
+        name: source-distribution
+        path: build-autotools/*.tar.gz
+
+  # Cross-compilation for ARM platforms
+  cross-compile-release:
+    name: Cross Compile Release (${{ matrix.arch }})
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        arch: [armhf, arm64]
+        include:
+          - arch: armhf
+            gcc_pkg: gcc-arm-linux-gnueabihf
+            toolchain_prefix: arm-linux-gnueabihf
+          - arch: arm64
+            gcc_pkg: gcc-aarch64-linux-gnu
+            toolchain_prefix: aarch64-linux-gnu
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install cross-compilation tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          pkg-config \
+          ${{ matrix.gcc_pkg }}
+
+    - name: Get version from tag
+      id: get_version
+      run: |
+        if [[ $GITHUB_REF == refs/tags/* ]]; then
+          VERSION=${GITHUB_REF#refs/tags/v}
+        else
+          VERSION="dev-$(git rev-parse --short HEAD)"
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Cross-compile
+      run: |
+        mkdir build-cross-${{ matrix.arch }}
+        cd build-cross-${{ matrix.arch }}
+        cmake \
+          -DCMAKE_SYSTEM_NAME=Linux \
+          -DCMAKE_C_COMPILER=${{ matrix.toolchain_prefix }}-gcc \
+          -DCMAKE_CXX_COMPILER=${{ matrix.toolchain_prefix }}-g++ \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_EXAMPLES=ON \
+          -DENABLE_LINUX_SUPPORT=ON \
+          -DCMAKE_INSTALL_PREFIX=/tmp/xensiv-cross-${{ matrix.arch }}-${{ steps.get_version.outputs.version }} \
+          ..
+        make -j$(nproc)
+        make install
+
+    - name: Create cross-compile archive
+      run: |
+        cd /tmp
+        tar -czf xensiv-bgt60trxx-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}.tar.gz \
+          xensiv-cross-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}/
+
+    - name: Upload cross-compiled artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: cross-compile-${{ matrix.arch }}
+        path: /tmp/xensiv-bgt60trxx-${{ matrix.arch }}-${{ steps.get_version.outputs.version }}.tar.gz
