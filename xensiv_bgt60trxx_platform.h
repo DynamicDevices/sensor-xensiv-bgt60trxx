@@ -1,26 +1,26 @@
-/***********************************************************************************************//**
- * \file xensiv_bgt60trxx_platform.h
- *
- * \brief
- * XENSIV(TM) BGT60TRxx 60GHz FMCW radar sensors library platform dependencies
- *
- ***************************************************************************************************
- * \copyright
- * Copyright 2022 Infineon Technologies AG
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- **************************************************************************************************/
+/***********************************************************************************************/ /**
+                                                                                                   * \file xensiv_bgt60trxx_platform.h
+                                                                                                   *
+                                                                                                   * \brief
+                                                                                                   * XENSIV(TM) BGT60TRxx 60GHz FMCW radar sensors library platform dependencies
+                                                                                                   *
+                                                                                                   ***************************************************************************************************
+                                                                                                   * \copyright
+                                                                                                   * Copyright 2022 Infineon Technologies AG
+                                                                                                   * SPDX-License-Identifier: Apache-2.0
+                                                                                                   *
+                                                                                                   * Licensed under the Apache License, Version 2.0 (the "License");
+                                                                                                   * you may not use this file except in compliance with the License.
+                                                                                                   * You may obtain a copy of the License at
+                                                                                                   *
+                                                                                                   *     http://www.apache.org/licenses/LICENSE-2.0
+                                                                                                   *
+                                                                                                   * Unless required by applicable law or agreed to in writing, software
+                                                                                                   * distributed under the License is distributed on an "AS IS" BASIS,
+                                                                                                   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+                                                                                                   * See the License for the specific language governing permissions and
+                                                                                                   * limitations under the License.
+                                                                                                   **************************************************************************************************/
 
 #ifndef XENSIV_BGT60TRXX_PLATFORM_H_
 #define XENSIV_BGT60TRXX_PLATFORM_H_
@@ -36,8 +36,8 @@
  *
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +49,7 @@ extern "C" {
  * @param[in] iface Platform SPI interface object
  * @param[in] val The value to be set (high = true, low = false)
  */
-void xensiv_bgt60trxx_platform_rst_set(const void* iface, bool val);
+void xensiv_bgt60trxx_platform_rst_set(const void *iface, bool val);
 
 /**
  * @brief Platform-specific function that that sets the output value of the SPI CS pin.
@@ -57,7 +57,7 @@ void xensiv_bgt60trxx_platform_rst_set(const void* iface, bool val);
  * @param[in] iface Platform SPI interface object
  * @param[in] val The value to be set (high = true, low = false)
  */
-void xensiv_bgt60trxx_platform_spi_cs_set(const void* iface, bool val);
+void xensiv_bgt60trxx_platform_spi_cs_set(const void *iface, bool val);
 
 /**
  * @brief Platform-specific function that performs a SPI write/read transfer to
@@ -74,9 +74,9 @@ void xensiv_bgt60trxx_platform_spi_cs_set(const void* iface, bool val);
  * @return XENSIV_BGT60TRXX_STATUS_OK if the transfer is completed without errors,
  * otherwise returns XENSIV_BGT60TRXX_STATUS_COM_ERROR.
  */
-int32_t xensiv_bgt60trxx_platform_spi_transfer(void* iface,
-                                               uint8_t* tx_data,
-                                               uint8_t* rx_data,
+int32_t xensiv_bgt60trxx_platform_spi_transfer(void *iface,
+                                               uint8_t *tx_data,
+                                               uint8_t *rx_data,
                                                uint32_t len);
 
 /**
@@ -92,9 +92,7 @@ int32_t xensiv_bgt60trxx_platform_spi_transfer(void* iface,
  * @return XENSIV_BGT60TRXX_STATUS_OK if the read is completed without errors,
  * otherwise returns XENSIV_BGT60TRXX_STATUS_COM_ERROR.
  */
-int32_t xensiv_bgt60trxx_platform_spi_fifo_read(void* iface,
-                                                uint16_t* rx_data,
-                                                uint32_t len);
+int32_t xensiv_bgt60trxx_platform_spi_fifo_read(void *iface, uint16_t *rx_data, uint32_t len);
 
 /**
  * @brief Platform-specific function that waits for a specified time period in milliseconds.

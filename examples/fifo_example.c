@@ -1,65 +1,64 @@
-/***********************************************************************************************//**
- * \file fifo_example.c
- *
- * \brief
- * Example demonstrating FIFO data reading from XENSIV BGT60TRxx sensor
- * on Linux platforms including Yocto Embedded Linux.
- *
- ***************************************************************************************************
- * \copyright
- * Copyright 2022 Infineon Technologies AG
- * SPDX-License-Identifier: Apache-2.0
- **************************************************************************************************/
+/***********************************************************************************************/ /**
+                                                                                                   * \file fifo_example.c
+                                                                                                   *
+                                                                                                   * \brief
+                                                                                                   * Example demonstrating FIFO data reading from XENSIV BGT60TRxx sensor
+                                                                                                   * on Linux platforms including Yocto Embedded Linux.
+                                                                                                   *
+                                                                                                   ***************************************************************************************************
+                                                                                                   * \copyright
+                                                                                                   * Copyright 2022 Infineon Technologies AG
+                                                                                                   * SPDX-License-Identifier: Apache-2.0
+                                                                                                   **************************************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <getopt.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 // Include the main library headers
 #include "../xensiv_bgt60trxx.h"
 #include "../xensiv_bgt60trxx_linux.h"
 
 /*******************************************************************************
-* Macros
-*******************************************************************************/
-#define DEFAULT_SPI_DEVICE      "/dev/spidev0.0"
-#define DEFAULT_GPIO_CHIP       "/dev/gpiochip0"
-#define DEFAULT_RST_GPIO        18
-#define DEFAULT_CS_GPIO         24
-#define FIFO_THRESHOLD          100
-#define MAX_SAMPLES             1000
+ * Macros
+ *******************************************************************************/
+#define DEFAULT_SPI_DEVICE "/dev/spidev0.0"
+#define DEFAULT_GPIO_CHIP "/dev/gpiochip0"
+#define DEFAULT_RST_GPIO 18
+#define DEFAULT_CS_GPIO 24
+#define FIFO_THRESHOLD 100
+#define MAX_SAMPLES 1000
 
 /*******************************************************************************
-* Global Variables
-*******************************************************************************/
+ * Global Variables
+ *******************************************************************************/
 static volatile bool g_running = true;
 static xensiv_bgt60trxx_linux_obj_t g_sensor_obj;
 
 /*******************************************************************************
-* Function Prototypes
-*******************************************************************************/
+ * Function Prototypes
+ *******************************************************************************/
 static void signal_handler(int sig);
-static void print_usage(const char* program_name);
-static int32_t configure_sensor(xensiv_bgt60trxx_t* dev);
-static void process_fifo_data(const uint16_t* data, uint32_t num_samples);
+static void print_usage(const char *program_name);
+static int32_t configure_sensor(xensiv_bgt60trxx_t *dev);
+static void process_fifo_data(const uint16_t *data, uint32_t num_samples);
 
 /*******************************************************************************
-* Function Implementations
-*******************************************************************************/
+ * Function Implementations
+ *******************************************************************************/
 
 static void signal_handler(int sig)
 {
-    (void)sig;
+    (void) sig;
     g_running = false;
     printf("\nShutdown requested...\n");
 }
 
-static void print_usage(const char* program_name)
+static void print_usage(const char *program_name)
 {
     printf("Usage: %s [options]\n", program_name);
     printf("Options:\n");
@@ -70,14 +69,14 @@ static void print_usage(const char* program_name)
     printf("  -h             Show this help message\n");
 }
 
-static int32_t configure_sensor(xensiv_bgt60trxx_t* dev)
+static int32_t configure_sensor(xensiv_bgt60trxx_t *dev)
 {
     int32_t result;
 
     // Basic configuration for continuous operation
     // This is a minimal configuration - in practice, you would use
     // configuration generated by the BGT60TRxx configurator tool
-    
+
     // Set FIFO threshold
     result = xensiv_bgt60trxx_set_fifo_limit(dev, FIFO_THRESHOLD);
     if (result != XENSIV_BGT60TRXX_STATUS_OK) {
@@ -89,37 +88,43 @@ static int32_t configure_sensor(xensiv_bgt60trxx_t* dev)
     return XENSIV_BGT60TRXX_STATUS_OK;
 }
 
-static void process_fifo_data(const uint16_t* data, uint32_t num_samples)
+static void process_fifo_data(const uint16_t *data, uint32_t num_samples)
 {
     static uint32_t total_samples = 0;
     uint32_t i;
-    
+
     // Simple processing - calculate average and print statistics
     uint32_t sum = 0;
     uint16_t min_val = data[0];
     uint16_t max_val = data[0];
-    
+
     for (i = 0; i < num_samples; i++) {
         sum += data[i];
-        if (data[i] < min_val) min_val = data[i];
-        if (data[i] > max_val) max_val = data[i];
+        if (data[i] < min_val)
+            min_val = data[i];
+        if (data[i] > max_val)
+            max_val = data[i];
     }
-    
+
     total_samples += num_samples;
-    
+
     printf("Processed %u samples (total: %u) - Avg: %u, Min: %u, Max: %u\n",
-           num_samples, total_samples, sum / num_samples, min_val, max_val);
+           num_samples,
+           total_samples,
+           sum / num_samples,
+           min_val,
+           max_val);
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
-    const char* spi_device = DEFAULT_SPI_DEVICE;
-    const char* gpio_chip = DEFAULT_GPIO_CHIP;
+    const char *spi_device = DEFAULT_SPI_DEVICE;
+    const char *gpio_chip = DEFAULT_GPIO_CHIP;
     unsigned int rst_gpio = DEFAULT_RST_GPIO;
     unsigned int cs_gpio = DEFAULT_CS_GPIO;
     int opt;
     int32_t result;
-    uint16_t* fifo_buffer;
+    uint16_t *fifo_buffer;
 
     // Parse command line arguments
     while ((opt = getopt(argc, argv, "s:g:r:c:h")) != -1) {
@@ -131,10 +136,10 @@ int main(int argc, char* argv[])
                 gpio_chip = optarg;
                 break;
             case 'r':
-                rst_gpio = (unsigned int)atoi(optarg);
+                rst_gpio = (unsigned int) atoi(optarg);
                 break;
             case 'c':
-                cs_gpio = (unsigned int)atoi(optarg);
+                cs_gpio = (unsigned int) atoi(optarg);
                 break;
             case 'h':
                 print_usage(argv[0]);
@@ -161,12 +166,8 @@ int main(int argc, char* argv[])
 
     // Initialize the sensor
     printf("Initializing sensor...\n");
-    result = xensiv_bgt60trxx_linux_init_sensor(&g_sensor_obj,
-                                               spi_device,
-                                               gpio_chip,
-                                               rst_gpio,
-                                               cs_gpio,
-                                               false);
+    result = xensiv_bgt60trxx_linux_init_sensor(
+        &g_sensor_obj, spi_device, gpio_chip, rst_gpio, cs_gpio, false);
 
     if (result != XENSIV_BGT60TRXX_STATUS_OK) {
         fprintf(stderr, "Failed to initialize sensor: %d\n", result);
@@ -200,7 +201,7 @@ int main(int argc, char* argv[])
     // Main data acquisition loop
     while (g_running) {
         uint32_t fifo_status;
-        
+
         // Check FIFO status
         result = xensiv_bgt60trxx_get_fifo_status(&g_sensor_obj.dev, &fifo_status);
         if (result != XENSIV_BGT60TRXX_STATUS_OK) {
@@ -211,9 +212,7 @@ int main(int argc, char* argv[])
         // Check if enough data is available
         if (fifo_status & XENSIV_BGT60TRXX_REG_FSTAT_CREF_MSK) {
             // Read FIFO data
-            result = xensiv_bgt60trxx_get_fifo_data(&g_sensor_obj.dev,
-                                                   fifo_buffer,
-                                                   FIFO_THRESHOLD);
+            result = xensiv_bgt60trxx_get_fifo_data(&g_sensor_obj.dev, fifo_buffer, FIFO_THRESHOLD);
             if (result == XENSIV_BGT60TRXX_STATUS_OK) {
                 process_fifo_data(fifo_buffer, FIFO_THRESHOLD);
             } else {
@@ -222,7 +221,7 @@ int main(int argc, char* argv[])
         }
 
         // Small delay to prevent excessive CPU usage
-        usleep(10000); // 10ms
+        usleep(10000);  // 10ms
     }
 
     // Stop frame generation
@@ -233,7 +232,7 @@ int main(int argc, char* argv[])
     printf("Cleaning up...\n");
     xensiv_bgt60trxx_linux_deinit_sensor(&g_sensor_obj);
     free(fifo_buffer);
-    
+
     printf("FIFO example completed successfully.\n");
     return 0;
 }

@@ -1,33 +1,32 @@
-/***********************************************************************************************//**
- * \file xensiv_bgt60trxx_mtb.h
- *
- * \brief
- * This file contains the MTB platform functions declarations
- * for interacting with the XENSIV(TM) BGT60TRxx 60GHz FMCW radar sensors.
- *
- ***************************************************************************************************
- * \copyright
- * Copyright 2022 Infineon Technologies AG
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- **************************************************************************************************/
+/***********************************************************************************************/ /**
+                                                                                                   * \file xensiv_bgt60trxx_mtb.h
+                                                                                                   *
+                                                                                                   * \brief
+                                                                                                   * This file contains the MTB platform functions declarations
+                                                                                                   * for interacting with the XENSIV(TM) BGT60TRxx 60GHz FMCW radar sensors.
+                                                                                                   *
+                                                                                                   ***************************************************************************************************
+                                                                                                   * \copyright
+                                                                                                   * Copyright 2022 Infineon Technologies AG
+                                                                                                   * SPDX-License-Identifier: Apache-2.0
+                                                                                                   *
+                                                                                                   * Licensed under the Apache License, Version 2.0 (the "License");
+                                                                                                   * you may not use this file except in compliance with the License.
+                                                                                                   * You may obtain a copy of the License at
+                                                                                                   *
+                                                                                                   *     http://www.apache.org/licenses/LICENSE-2.0
+                                                                                                   *
+                                                                                                   * Unless required by applicable law or agreed to in writing, software
+                                                                                                   * distributed under the License is distributed on an "AS IS" BASIS,
+                                                                                                   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+                                                                                                   * See the License for the specific language governing permissions and
+                                                                                                   * limitations under the License.
+                                                                                                   **************************************************************************************************/
 
 #ifndef XENSIV_BGT60TRXX_MTB_H_
 #define XENSIV_BGT60TRXX_MTB_H_
 
 #include "cy_result.h"
-
 #include "xensiv_bgt60trxx.h"
 
 /**
@@ -53,37 +52,41 @@
  */
 
 #if defined(CY_USING_HAL)
-#include "cyhal_gpio.h"
-#include "cyhal_spi.h"
+    #include "cyhal_gpio.h"
+    #include "cyhal_spi.h"
 
-/************************************** Macros *******************************************/
+    /************************************** Macros *******************************************/
 
-#ifndef CY_RSLT_MODULE_BOARD_HARDWARE_XENSIV_BGT60TRXX
-/** Module identifier for the XENSIV(TM) BGT60TRxx radar sensor library.
-    Asset(s): (sensor-XENSIV(TM)-bgt60trxx) */
-#define CY_RSLT_MODULE_BOARD_HARDWARE_XENSIV_BGT60TRXX 0x01CC
-#endif
+    #ifndef CY_RSLT_MODULE_BOARD_HARDWARE_XENSIV_BGT60TRXX
+        /** Module identifier for the XENSIV(TM) BGT60TRxx radar sensor library.
+            Asset(s): (sensor-XENSIV(TM)-bgt60trxx) */
+        #define CY_RSLT_MODULE_BOARD_HARDWARE_XENSIV_BGT60TRXX 0x01CC
+    #endif
 
-/** Result code indicating a communication error. */
-#define XENSIV_BGT60TRXX_RSLT_ERR_COMM\
-    (CY_RSLT_CREATE(CY_RSLT_TYPE_ERROR, CY_RSLT_MODULE_BOARD_HARDWARE_XENSIV_BGT60TRXX, XENSIV_BGT60TRXX_STATUS_COM_ERROR))
+    /** Result code indicating a communication error. */
+    #define XENSIV_BGT60TRXX_RSLT_ERR_COMM                                                         \
+        (CY_RSLT_CREATE(CY_RSLT_TYPE_ERROR,                                                        \
+                        CY_RSLT_MODULE_BOARD_HARDWARE_XENSIV_BGT60TRXX,                            \
+                        XENSIV_BGT60TRXX_STATUS_COM_ERROR))
 
-/** Result code indicating an unsupported device error. */
-#define XENSIV_BGT60TRXX_RSLT_ERR_UNKNOWN_DEVICE\
-    (CY_RSLT_CREATE(CY_RSLT_TYPE_ERROR, CY_RSLT_MODULE_BOARD_HARDWARE_XENSIV_BGT60TRXX, XENSIV_BGT60TRXX_STATUS_DEV_ERROR))
+    /** Result code indicating an unsupported device error. */
+    #define XENSIV_BGT60TRXX_RSLT_ERR_UNKNOWN_DEVICE                                               \
+        (CY_RSLT_CREATE(CY_RSLT_TYPE_ERROR,                                                        \
+                        CY_RSLT_MODULE_BOARD_HARDWARE_XENSIV_BGT60TRXX,                            \
+                        XENSIV_BGT60TRXX_STATUS_DEV_ERROR))
 
-/** An attempt was made to reconfigure the interrupt pin */
-#define XENSIV_BGT60TRXX_RSLT_ERR_INTPIN_INUSE\
-    (CY_RSLT_CREATE(CY_RSLT_TYPE_ERROR, CY_RSLT_MODULE_BOARD_HARDWARE_XENSIV_BGT60TRXX, 0x100))
+    /** An attempt was made to reconfigure the interrupt pin */
+    #define XENSIV_BGT60TRXX_RSLT_ERR_INTPIN_INUSE                                                 \
+        (CY_RSLT_CREATE(CY_RSLT_TYPE_ERROR, CY_RSLT_MODULE_BOARD_HARDWARE_XENSIV_BGT60TRXX, 0x100))
 
-/******************************** Type definitions ****************************************/
+    /******************************** Type definitions ****************************************/
 
-/** \cond INTERNAL */
-#if defined(CYHAL_API_VERSION) && (CYHAL_API_VERSION >= 2)
+    /** \cond INTERNAL */
+    #if defined(CYHAL_API_VERSION) && (CYHAL_API_VERSION >= 2)
 typedef cyhal_gpio_callback_data_t xensiv_bgt60trxx_mtb_interrupt_pin_t;
-#else
-typedef cyhal_gpio_t               xensiv_bgt60trxx_mtb_interrupt_pin_t;
-#endif
+    #else
+typedef cyhal_gpio_t xensiv_bgt60trxx_mtb_interrupt_pin_t;
+    #endif
 /** \endcond */
 
 /**
@@ -93,9 +96,8 @@ typedef cyhal_gpio_t               xensiv_bgt60trxx_mtb_interrupt_pin_t;
  * They are considered an implementation detail which is subject to change
  * between platforms and/or library releases.
  */
-typedef struct
-{
-    cyhal_spi_t* spi;
+typedef struct {
+    cyhal_spi_t *spi;
     cyhal_gpio_t selpin;
     cyhal_gpio_t rstpin;
     xensiv_bgt60trxx_mtb_interrupt_pin_t irqpin;
@@ -107,17 +109,16 @@ typedef struct
  * Content initialized using \ref xensiv_bgt60trxx_mtb_init
  *
  */
-typedef struct
-{
-    xensiv_bgt60trxx_t dev; /**< sensor object */
+typedef struct {
+    xensiv_bgt60trxx_t dev;             /**< sensor object */
     xensiv_bgt60trxx_mtb_iface_t iface; /**< interface object for communication */
 } xensiv_bgt60trxx_mtb_t;
 
-/******************************* Function prototypes *************************************/
+    /******************************* Function prototypes *************************************/
 
-#ifdef __cplusplus
+    #ifdef __cplusplus
 extern "C" {
-#endif
+    #endif
 
 /** Initializes the XENSIV(TM) BGT60TRxx sensor.
  * The provided pins will be initialized by this function.
@@ -142,11 +143,11 @@ extern "C" {
  * @param[in]    len       Length of the configuration registers list.
  * @return CY_RSLT_SUCCESS if properly initialized; else an error indicating what went wrong.
  */
-cy_rslt_t xensiv_bgt60trxx_mtb_init(xensiv_bgt60trxx_mtb_t* obj,
-                                    cyhal_spi_t* spi,
+cy_rslt_t xensiv_bgt60trxx_mtb_init(xensiv_bgt60trxx_mtb_t *obj,
+                                    cyhal_spi_t *spi,
                                     cyhal_gpio_t selpin,
                                     cyhal_gpio_t rstpin,
-                                    const uint32_t* regs,
+                                    const uint32_t *regs,
                                     size_t len);
 
 /** Configures a GPIO pin as an interrupt for the XENSIV(TM) BGT60TRxx.
@@ -169,26 +170,26 @@ cy_rslt_t xensiv_bgt60trxx_mtb_init(xensiv_bgt60trxx_mtb_t* obj,
  * @return CY_RSLT_SUCCESS if interrupt was successfully enabled; else an error occurred while
  * initializing the pin.
  */
-cy_rslt_t xensiv_bgt60trxx_mtb_interrupt_init(xensiv_bgt60trxx_mtb_t* obj,
+cy_rslt_t xensiv_bgt60trxx_mtb_interrupt_init(xensiv_bgt60trxx_mtb_t *obj,
                                               uint16_t fifo_limit,
                                               cyhal_gpio_t irqpin,
                                               uint8_t intr_priority,
                                               cyhal_gpio_event_callback_t callback,
-                                              void* callback_arg);
+                                              void *callback_arg);
 
 /**
  * Frees up any resources allocated by the XENSIV(TM) BGT60TRxx as part of
  * \ref xensiv_bgt60trxx_mtb_init()
  * @param[in] obj  Pointer to the BGT60TRxx ModusToolbox(TM) object.
  */
-void xensiv_bgt60trxx_mtb_free(xensiv_bgt60trxx_mtb_t* obj);
+void xensiv_bgt60trxx_mtb_free(xensiv_bgt60trxx_mtb_t *obj);
 
-#ifdef __cplusplus
+    #ifdef __cplusplus
 }
-#endif
+    #endif
 
-#endif // defined(CY_USING_HAL)
+#endif  // defined(CY_USING_HAL)
 
 /** \} group_board_libs_mtb */
 
-#endif // ifndef XENSIV_BGT60TRXX_MTB_H_
+#endif  // ifndef XENSIV_BGT60TRXX_MTB_H_

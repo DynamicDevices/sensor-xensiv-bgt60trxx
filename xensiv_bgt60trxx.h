@@ -1,27 +1,27 @@
-/***********************************************************************************************//**
- * \file xensiv_bgt60trxx.h
- *
- * \brief
- * This file contains the functions for interacting with the
- * XENSIV(TM) BGT60TRxx 60GHz FMCW radar sensors.
- *
- ***************************************************************************************************
- * \copyright
- * Copyright 2022 Infineon Technologies AG
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- **************************************************************************************************/
+/***********************************************************************************************/ /**
+                                                                                                   * \file xensiv_bgt60trxx.h
+                                                                                                   *
+                                                                                                   * \brief
+                                                                                                   * This file contains the functions for interacting with the
+                                                                                                   * XENSIV(TM) BGT60TRxx 60GHz FMCW radar sensors.
+                                                                                                   *
+                                                                                                   ***************************************************************************************************
+                                                                                                   * \copyright
+                                                                                                   * Copyright 2022 Infineon Technologies AG
+                                                                                                   * SPDX-License-Identifier: Apache-2.0
+                                                                                                   *
+                                                                                                   * Licensed under the Apache License, Version 2.0 (the "License");
+                                                                                                   * you may not use this file except in compliance with the License.
+                                                                                                   * You may obtain a copy of the License at
+                                                                                                   *
+                                                                                                   *     http://www.apache.org/licenses/LICENSE-2.0
+                                                                                                   *
+                                                                                                   * Unless required by applicable law or agreed to in writing, software
+                                                                                                   * distributed under the License is distributed on an "AS IS" BASIS,
+                                                                                                   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+                                                                                                   * See the License for the specific language governing permissions and
+                                                                                                   * limitations under the License.
+                                                                                                   **************************************************************************************************/
 
 #ifndef XENSIV_BGT60TRXX_H_
 #define XENSIV_BGT60TRXX_H_
@@ -44,46 +44,45 @@
  *
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "xensiv_bgt60trxx_regs.h"
 
 /************************************** Macros *******************************************/
 
 /** Result code indicating successful operation. */
-#define XENSIV_BGT60TRXX_STATUS_OK                      (0)
+#define XENSIV_BGT60TRXX_STATUS_OK (0)
 /** Result code indicating a communication error. */
-#define XENSIV_BGT60TRXX_STATUS_COM_ERROR               (1)
+#define XENSIV_BGT60TRXX_STATUS_COM_ERROR (1)
 /** Result code indicating an unsupported device error. */
-#define XENSIV_BGT60TRXX_STATUS_DEV_ERROR               (2)
+#define XENSIV_BGT60TRXX_STATUS_DEV_ERROR (2)
 /** Result code indicating an operation timeout error. */
-#define XENSIV_BGT60TRXX_STATUS_TIMEOUT_ERROR           (3)
+#define XENSIV_BGT60TRXX_STATUS_TIMEOUT_ERROR (3)
 /** Result code indicating that an error occurred while reading from FIFO. */
-#define XENSIV_BGT60TRXX_STATUS_GSR0_ERROR              (4)
+#define XENSIV_BGT60TRXX_STATUS_GSR0_ERROR (4)
 
 /** Initial value of the LFSR test sequence generator. */
-#define XENSIV_BGT60TRXX_INITIAL_TEST_WORD              (0x0001U)
+#define XENSIV_BGT60TRXX_INITIAL_TEST_WORD (0x0001U)
 
 /** Number of samples stored in a FIFO word (24 bits). */
-#define XENSIV_BGT60TRXX_NUM_SAMPLES_FIFO_WORD          (2U)
+#define XENSIV_BGT60TRXX_NUM_SAMPLES_FIFO_WORD (2U)
 
 /** Size of the radar device FIFO word in bytes. */
-#define XENSIV_BGT60TRXX_FIFO_WORD_SIZE_BYTES           (3U)   /* two ADC samples of 12bits */
+#define XENSIV_BGT60TRXX_FIFO_WORD_SIZE_BYTES (3U) /* two ADC samples of 12bits */
 
 /** Size of the header in the SPI burst transfer. */
-#define XENSIV_BGT60TRXX_SPI_BURST_HEADER_SIZE_BYTES    (4U)
+#define XENSIV_BGT60TRXX_SPI_BURST_HEADER_SIZE_BYTES (4U)
 
 /** Timeout for wait on software reset done. */
 #ifndef XENSIV_BGT60TRXX_RESET_WAIT_TIMEOUT
-#define XENSIV_BGT60TRXX_RESET_WAIT_TIMEOUT             (0xFFFFFFFFU)
+    #define XENSIV_BGT60TRXX_RESET_WAIT_TIMEOUT (0xFFFFFFFFU)
 #endif
 
 /********************************* Type definitions **************************************/
 
 /** enum defining the different reset commands passed to \ref xensiv_bgt60trxx_soft_reset() */
-typedef enum
-{
+typedef enum {
     /*! Software reset.
         Resets all registers to default state.
         Resets all internal counters (e.g. shape, frame).
@@ -100,12 +99,11 @@ typedef enum
 } xensiv_bgt60trxx_reset_t;
 
 /** enum with supported devices */
-typedef enum
-{
-    XENSIV_DEVICE_BGT60TR13C = 0,   /**< BGT60TR13C */
-    XENSIV_DEVICE_BGT60UTR13D = 1,  /**< BGT60UTR13D */
-    XENSIV_DEVICE_BGT60UTR11 = 2,   /**< BGT60UTR11 */
-    XENSIV_DEVICE_UNKNOWN = -1      /**< Unknown not supported device */
+typedef enum {
+    XENSIV_DEVICE_BGT60TR13C = 0,  /**< BGT60TR13C */
+    XENSIV_DEVICE_BGT60UTR13D = 1, /**< BGT60UTR13D */
+    XENSIV_DEVICE_BGT60UTR11 = 2,  /**< BGT60UTR11 */
+    XENSIV_DEVICE_UNKNOWN = -1     /**< Unknown not supported device */
 } xensiv_bgt60trxx_device_t;
 
 /** \cond INTERNAL */
@@ -119,12 +117,11 @@ struct xensiv_bgt60trxx_type;
  * They are considered an implementation detail which is subject to change
  * between platforms and/or library releases.
  */
-typedef struct
-{
-    void* iface; /**< Pointer to platform-specific SPI interface object provided to the
+typedef struct {
+    void *iface; /**< Pointer to platform-specific SPI interface object provided to the
                       xensiv_bgt60trxx_platform_spi_transfer function */
-    const struct xensiv_bgt60trxx_type* type; /**< Device type detected during initialization */
-    bool high_speed; /**< SPI speed mode */
+    const struct xensiv_bgt60trxx_type *type; /**< Device type detected during initialization */
+    bool high_speed;                          /**< SPI speed mode */
 } xensiv_bgt60trxx_t;
 
 /******************************* Function prototypes *************************************/
@@ -148,9 +145,7 @@ extern "C" {
  * @return XENSIV_BGT60TRXX_STATUS_OK if the initialization was successful; else an error indicating
  * what went wrong.
  */
-int32_t xensiv_bgt60trxx_init(xensiv_bgt60trxx_t* dev,
-                              void* iface,
-                              bool high_speed);
+int32_t xensiv_bgt60trxx_init(xensiv_bgt60trxx_t *dev, void *iface, bool high_speed);
 
 /**
  * @brief Obtains the detected sensor device name.
@@ -158,7 +153,7 @@ int32_t xensiv_bgt60trxx_init(xensiv_bgt60trxx_t* dev,
  * @param[in] dev Pointer to the XENSIV(TM) BGT60TRxx sensor device object.
  * @return sensor device name.
  */
-xensiv_bgt60trxx_device_t xensiv_bgt60trxx_get_device(const xensiv_bgt60trxx_t* dev);
+xensiv_bgt60trxx_device_t xensiv_bgt60trxx_get_device(const xensiv_bgt60trxx_t *dev);
 
 /**
  * @brief Configures the XENSIV(TM) BGT60TRxx radar sensor device.
@@ -171,9 +166,7 @@ xensiv_bgt60trxx_device_t xensiv_bgt60trxx_get_device(const xensiv_bgt60trxx_t* 
  * @return XENSIV_BGT60TRXX_STATUS_OK if the initialization was successful; else an error indicating
  * what went wrong.
  */
-int32_t xensiv_bgt60trxx_config(xensiv_bgt60trxx_t* dev,
-                                const uint32_t* regs,
-                                uint32_t len);
+int32_t xensiv_bgt60trxx_config(xensiv_bgt60trxx_t *dev, const uint32_t *regs, uint32_t len);
 
 /**
  * @brief Writes the given data buffer into the sensor device.
@@ -185,9 +178,7 @@ int32_t xensiv_bgt60trxx_config(xensiv_bgt60trxx_t* dev,
  * @return XENSIV_BGT60TRXX_STATUS_OK if writing to the sensor register wash successful; else an
  * error indicating what went wrong.
  */
-int32_t xensiv_bgt60trxx_set_reg(const xensiv_bgt60trxx_t* dev,
-                                 uint32_t reg_addr,
-                                 uint32_t data);
+int32_t xensiv_bgt60trxx_set_reg(const xensiv_bgt60trxx_t *dev, uint32_t reg_addr, uint32_t data);
 
 /**
  * @brief Reads from the sensor device into the given data buffer.
@@ -200,9 +191,7 @@ int32_t xensiv_bgt60trxx_set_reg(const xensiv_bgt60trxx_t* dev,
  * @return XENSIV_BGT60TRXX_STATUS_OK if reading from the sensor register was successful; else an
  * error indicating what went wrong.
  */
-int32_t xensiv_bgt60trxx_get_reg(const xensiv_bgt60trxx_t* dev,
-                                 uint32_t reg_addr,
-                                 uint32_t* data);
+int32_t xensiv_bgt60trxx_get_reg(const xensiv_bgt60trxx_t *dev, uint32_t reg_addr, uint32_t *data);
 
 /**
  * @brief Obtains the sensor device FIFO size.
@@ -210,7 +199,7 @@ int32_t xensiv_bgt60trxx_get_reg(const xensiv_bgt60trxx_t* dev,
  * @param[in] dev Pointer to the XENSIV(TM) BGT60TRxx sensor device object.
  * @return FIFO size.
  */
-uint16_t xensiv_bgt60trxx_get_fifo_size(const xensiv_bgt60trxx_t* dev);
+uint16_t xensiv_bgt60trxx_get_fifo_size(const xensiv_bgt60trxx_t *dev);
 
 /**
  * @brief Obtains the sensor device FIFO status.
@@ -223,8 +212,7 @@ uint16_t xensiv_bgt60trxx_get_fifo_size(const xensiv_bgt60trxx_t* dev);
  * @return XENSIV_BGT60TRXX_STATUS_OK if reading the FIFO status was successful; else
  * an error indicating what went wrong.
  */
-int32_t xensiv_bgt60trxx_get_fifo_status(const xensiv_bgt60trxx_t* dev,
-                                         uint32_t* status);
+int32_t xensiv_bgt60trxx_get_fifo_status(const xensiv_bgt60trxx_t *dev, uint32_t *status);
 
 /**
  * @brief Sets the FIFO compare reference value.
@@ -239,8 +227,7 @@ int32_t xensiv_bgt60trxx_get_fifo_status(const xensiv_bgt60trxx_t* dev,
  * @return XENSIV_BGT60TRXX_STATUS_OK if setting the new FIFO limit was successful; else
  * an error indicating what went wrong.
  */
-int32_t xensiv_bgt60trxx_set_fifo_limit(const xensiv_bgt60trxx_t* dev,
-                                        uint32_t num_samples);
+int32_t xensiv_bgt60trxx_set_fifo_limit(const xensiv_bgt60trxx_t *dev, uint32_t num_samples);
 
 /**
  * @brief Reads from the sensor device FIFO into the given data buffer.
@@ -253,8 +240,8 @@ int32_t xensiv_bgt60trxx_set_fifo_limit(const xensiv_bgt60trxx_t* dev,
  * @return XENSIV_BGT60TRXX_STATUS_OK if reading from the FIFO was successful; else
  * an error indicating what went wrong.
  */
-int32_t xensiv_bgt60trxx_get_fifo_data(const xensiv_bgt60trxx_t* dev,
-                                       uint16_t* data,
+int32_t xensiv_bgt60trxx_get_fifo_data(const xensiv_bgt60trxx_t *dev,
+                                       uint16_t *data,
                                        uint32_t num_samples);
 
 /**
@@ -265,8 +252,7 @@ int32_t xensiv_bgt60trxx_get_fifo_data(const xensiv_bgt60trxx_t* dev,
  * @return XENSIV_BGT60TRXX_STATUS_OK if the starting the frame generation was successful,
  * else an error indicating what went wrong.
  */
-int32_t xensiv_bgt60trxx_start_frame(const xensiv_bgt60trxx_t* dev,
-                                     bool start);
+int32_t xensiv_bgt60trxx_start_frame(const xensiv_bgt60trxx_t *dev, bool start);
 
 /**
  * @brief Triggers a soft reset of the sensor device.
@@ -277,7 +263,7 @@ int32_t xensiv_bgt60trxx_start_frame(const xensiv_bgt60trxx_t* dev,
  * XENSIV_BGT60TRXX_STATUS_TIMEOUT_ERROR if a timeout occurs while waiting reset to finish;
  * else an error indicating what went wrong.
  */
-int32_t xensiv_bgt60trxx_soft_reset(const xensiv_bgt60trxx_t* dev,
+int32_t xensiv_bgt60trxx_soft_reset(const xensiv_bgt60trxx_t *dev,
                                     xensiv_bgt60trxx_reset_t reset_type);
 
 /**
@@ -292,15 +278,14 @@ int32_t xensiv_bgt60trxx_soft_reset(const xensiv_bgt60trxx_t* dev,
  * @return XENSIV_BGT60TRXX_STATUS_OK if enabling the data testomode was successful; else
  * an error indicating what went wrong.
  */
-int32_t xensiv_bgt60trxx_enable_data_test_mode(const xensiv_bgt60trxx_t* dev,
-                                               bool enable);
+int32_t xensiv_bgt60trxx_enable_data_test_mode(const xensiv_bgt60trxx_t *dev, bool enable);
 
 /**
  * @brief Performs a hard reset of the sensor device.
  *
  * @param[in] dev Pointer to the XENSIV(TM) BGT60TRxx sensor device object.
  */
-void xensiv_bgt60trxx_hard_reset(const xensiv_bgt60trxx_t* dev);
+void xensiv_bgt60trxx_hard_reset(const xensiv_bgt60trxx_t *dev);
 
 /**
  * @brief Utility function that generates test sequence data that can be used to compare against
@@ -325,4 +310,4 @@ uint16_t xensiv_bgt60trxx_get_next_test_word(uint16_t cur_test_word);
 
 /** \} group_board_libs */
 
-#endif // ifndef XENSIV_BGT60TRXX_H_
+#endif  // ifndef XENSIV_BGT60TRXX_H_
