@@ -25,16 +25,36 @@ local_conf_header:
   base: |
     # Basic Yocto configuration
     CONF_VERSION = "2"
-    
+
     # Parallel build configuration
     BB_NUMBER_THREADS ?= "${@oe.utils.cpu_count()}"
     PARALLEL_MAKE ?= "-j ${@oe.utils.cpu_count()}"
-    
+
     # Download directory
     DL_DIR ?= "${TOPDIR}/downloads"
-    
+
     # Shared state cache
     SSTATE_DIR ?= "${TOPDIR}/sstate-cache"
-    
+
     # Package format
     PACKAGE_CLASSES ?= "package_rpm"
+
+    # Cache optimization settings
+    # Enable shared state cache mirrors for faster builds
+    SSTATE_MIRRORS ?= "file://.* file://${SSTATE_DIR}/PATH;downloadfilename=PATH"
+
+    # Optimize disk usage
+    INHERIT += "rm_work"
+    RM_WORK_EXCLUDE += "xensiv-bgt60trxx xensiv-bgt60trxx-test-image"
+
+    # Enable build history for debugging
+    INHERIT += "buildhistory"
+    BUILDHISTORY_COMMIT = "1"
+
+    # Optimize fetcher
+    BB_FETCH_PREMIRRORONLY = "0"
+    BB_GENERATE_MIRROR_TARBALLS = "1"
+
+    # Network optimization
+    BB_NO_NETWORK = "0"
+    CONNECTIVITY_CHECK_URIS = ""

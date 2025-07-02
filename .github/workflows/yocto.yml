@@ -67,13 +67,63 @@ jobs:
       - name: Cache Yocto downloads
         uses: actions/cache@v4
         with:
-          path: |
-            downloads
-            sstate-cache
-          key: yocto-${{ matrix.config.machine }}-${{ hashFiles(matrix.config.file) }}
+          path: downloads
+          key: yocto-downloads-${{ hashFiles('kas/*.yml', 'meta-xensiv-bgt60trxx/**/*.bb', 'meta-xensiv-bgt60trxx/**/*.bbappend') }}
           restore-keys: |
-            yocto-${{ matrix.config.machine }}-
-            yocto-
+            yocto-downloads-
+
+      - name: Cache Yocto sstate
+        uses: actions/cache@v4
+        with:
+          path: sstate-cache
+          key: yocto-sstate-${{ matrix.config.machine }}-${{ hashFiles('kas/*.yml', 'meta-xensiv-bgt60trxx/**/*.bb', 'meta-xensiv-bgt60trxx/**/*.bbappend', 'meta-xensiv-bgt60trxx/**/*.inc') }}
+          restore-keys: |
+            yocto-sstate-${{ matrix.config.machine }}-
+            yocto-sstate-
+
+      - name: Cache Kas repositories
+        uses: actions/cache@v4
+        with:
+          path: |
+            .kas-cache
+            poky
+            meta-openembedded
+            meta-raspberrypi
+          key: kas-repos-${{ hashFiles('kas/*.yml') }}
+          restore-keys: |
+            kas-repos-
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
+
+      - name: Set up build environment
+        run: |
+          # Create cache directories
+          mkdir -p downloads sstate-cache .kas-cache
+
+          # Set up Kas environment variables for caching
+          echo "KAS_WORK_DIR=$(pwd)" >> $GITHUB_ENV
+          echo "KAS_REPO_REF_DIR=$(pwd)/.kas-cache" >> $GITHUB_ENV
+          echo "DL_DIR=$(pwd)/downloads" >> $GITHUB_ENV
+          echo "SSTATE_DIR=$(pwd)/sstate-cache" >> $GITHUB_ENV
+
+          # Optimize build settings
+          echo "BB_NUMBER_THREADS=$(nproc)" >> $GITHUB_ENV
+          echo "PARALLEL_MAKE=-j$(nproc)" >> $GITHUB_ENV
+
+      - name: Pre-warm repository cache
+        run: |
+          # Pre-fetch repositories to warm the cache
+          echo "Pre-warming repository cache..."
+          kas-container checkout ${{ matrix.config.file }} || true
+        env:
+          KAS_WORK_DIR: ${{ env.KAS_WORK_DIR }}
+          KAS_REPO_REF_DIR: ${{ env.KAS_REPO_REF_DIR }}
 
       - name: Build with Kas
         run: |
@@ -81,18 +131,31 @@ jobs:
           kas-container build ${{ matrix.config.file }}
         env:
           DOCKER_BUILDKIT: 1
+          # Pass cache directories to container
+          KAS_WORK_DIR: ${{ env.KAS_WORK_DIR }}
+          KAS_REPO_REF_DIR: ${{ env.KAS_REPO_REF_DIR }}
+          DL_DIR: ${{ env.DL_DIR }}
+          SSTATE_DIR: ${{ env.SSTATE_DIR }}
 
       - name: Build SDK
         if: matrix.config.machine == 'qemux86-64'
         run: |
           export LANG=en_US.UTF-8
           kas-container shell ${{ matrix.config.file }} -c "bitbake xensiv-bgt60trxx-test-image -c populate_sdk"
+        env:
+          KAS_WORK_DIR: ${{ env.KAS_WORK_DIR }}
+          KAS_REPO_REF_DIR: ${{ env.KAS_REPO_REF_DIR }}
+          DL_DIR: ${{ env.DL_DIR }}
+          SSTATE_DIR: ${{ env.SSTATE_DIR }}
 
       - name: Test QEMU boot
         if: matrix.config.machine == 'qemux86-64'
         run: |
           export LANG=en_US.UTF-8
           timeout 300 kas-container shell ${{ matrix.config.file }} -c "runqemu qemux86-64 nographic" || true
+        env:
+          KAS_WORK_DIR: ${{ env.KAS_WORK_DIR }}
+          KAS_REPO_REF_DIR: ${{ env.KAS_REPO_REF_DIR }}
 
       - name: Collect build artifacts
         run: |
@@ -132,6 +195,30 @@ jobs:
           path: artifacts/
           retention-days: 30
 
+      - name: Optimize cache size
+        if: always()
+        run: |
+          echo "Cache sizes before cleanup:"
+          du -sh downloads sstate-cache .kas-cache 2>/dev/null || true
+
+          # Clean up sstate cache - keep only recent entries
+          if [ -d "sstate-cache" ]; then
+            find sstate-cache -type f -atime +7 -delete 2>/dev/null || true
+            find sstate-cache -type d -empty -delete 2>/dev/null || true
+          fi
+
+          # Clean up downloads - keep only recent entries
+          if [ -d "downloads" ]; then
+            find downloads -type f -atime +14 -delete 2>/dev/null || true
+            find downloads -type d -empty -delete 2>/dev/null || true
+          fi
+
+          # Clean up build artifacts we don't need to cache
+          rm -rf build/tmp/work build/tmp/sysroots-components 2>/dev/null || true
+
+          echo "Cache sizes after cleanup:"
+          du -sh downloads sstate-cache .kas-cache 2>/dev/null || true
+
       - name: Generate build summary
         run: |
           echo "## Yocto Build Summary - ${{ matrix.config.name }}" >> $GITHUB_STEP_SUMMARY
@@ -153,6 +240,18 @@ jobs:
             ls -la artifacts/packages/ >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
+
+          # Add cache statistics
+          echo "### Cache Statistics" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "Cache sizes:" >> $GITHUB_STEP_SUMMARY
+          du -sh downloads sstate-cache .kas-cache 2>/dev/null || echo "Cache directories not found" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Build time optimizations:" >> $GITHUB_STEP_SUMMARY
+          echo "- Downloads cache: $([ -d downloads ] && echo "✓ Active" || echo "✗ Not found")" >> $GITHUB_STEP_SUMMARY
+          echo "- Sstate cache: $([ -d sstate-cache ] && echo "✓ Active" || echo "✗ Not found")" >> $GITHUB_STEP_SUMMARY
+          echo "- Repository cache: $([ -d .kas-cache ] && echo "✓ Active" || echo "✗ Not found")" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
   validate-recipes:
     runs-on: ubuntu-22.04

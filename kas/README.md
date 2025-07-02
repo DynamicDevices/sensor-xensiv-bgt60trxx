@@ -76,6 +76,50 @@ After a successful build, you'll find the following artifacts in `build/tmp/depl
 - **Packages**: `rpm/<arch>/xensiv-bgt60trxx-*`
 - **SDK**: `sdk/poky-glibc-*-toolchain-*.sh`
 
+## Build Performance & Caching
+
+### Cache Optimization
+
+Kas builds are significantly faster with proper caching. The build system uses multiple cache layers:
+
+1. **Downloads Cache** (`downloads/`): Source tarballs, git repositories
+2. **Shared State Cache** (`sstate-cache/`): Compiled packages and build artifacts
+3. **Repository Cache** (`.kas-cache/`): Yocto layer repositories
+
+### Expected Build Times
+
+| Build Type | Duration | Cache Status |
+|------------|----------|--------------|
+| First build | 45-90 min | Cold cache |
+| Subsequent builds | 10-20 min | Warm cache |
+| Incremental builds | 2-5 min | Hot cache |
+| CI builds (GitHub) | 15-30 min | Optimized cache |
+
+### Cache Management
+
+Use the provided cache information script:
+
+```bash
+# Show cache statistics and optimization tips
+./kas/cache-info.sh
+```
+
+### Local Cache Setup
+
+For optimal local development:
+
+```bash
+# Create persistent cache directories
+mkdir -p ~/.kas-cache/{downloads,sstate}
+
+# Set environment variables
+export DL_DIR=~/.kas-cache/downloads
+export SSTATE_DIR=~/.kas-cache/sstate
+
+# Build with caching
+kas-container build kas/xensiv-bgt60trxx-test.yml
+```
+
 ## Testing the Library
 
 ### In QEMU
