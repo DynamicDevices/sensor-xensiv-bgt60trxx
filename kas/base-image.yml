@@ -9,17 +9,17 @@ repos:
     url: https://git.yoctoproject.org/poky
     refspec: kirkstone
     layers:
-      base: meta
-      yocto: meta-yocto
-      bsp: meta-yocto-bsp
+      meta:
+      meta-poky:
+      meta-yocto-bsp:
 
   meta-openembedded:
     url: https://git.openembedded.org/meta-openembedded
     refspec: kirkstone
     layers:
-      oe: meta-oe
-      python: meta-python
-      networking: meta-networking
+      meta-oe:
+      meta-python:
+      meta-networking:
 
 local_conf_header:
   base: |
@@ -53,8 +53,10 @@ local_conf_header:
 
     # Optimize fetcher
     BB_FETCH_PREMIRRORONLY = "0"
-    BB_GENERATE_MIRROR_TARBALLS = "1"
+    BB_GENERATE_MIRROR_TARBALLS = "0"
 
-    # Network optimization
+    # Optimize network usage
     BB_NO_NETWORK = "0"
-    CONNECTIVITY_CHECK_URIS = ""
+
+    # Enable parallel downloads
+    BB_NUMBER_PARSE_THREADS = "4"

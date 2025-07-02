@@ -10,27 +10,11 @@ target:
   - xensiv-bgt60trxx-test-image
 
 repos:
-  poky:
-    url: https://git.yoctoproject.org/poky
-    refspec: kirkstone
-    layers:
-      base: meta
-      yocto: meta-yocto
-      bsp: meta-yocto-bsp
-
-  meta-openembedded:
-    url: https://git.openembedded.org/meta-openembedded
-    refspec: kirkstone
-    layers:
-      oe: meta-oe
-      python: meta-python
-      networking: meta-networking
-
   xensiv-bgt60trxx:
     url: .
     refspec: master
     layers:
-      xensiv: meta-xensiv-bgt60trxx
+      meta-xensiv-bgt60trxx:
 
 local_conf_header:
   base: |
