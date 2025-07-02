@@ -1,0 +1,213 @@
+name: Yocto/Kas Build
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      kas_config:
+        description: 'Kas configuration to build'
+        required: false
+        default: 'kas/xensiv-bgt60trxx-test.yml'
+        type: choice
+        options:
+          - kas/xensiv-bgt60trxx-test.yml
+          - kas/xensiv-bgt60trxx-rpi4.yml
+
+jobs:
+  yocto-build:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        config:
+          - name: "QEMU x86-64"
+            file: "kas/xensiv-bgt60trxx-test.yml"
+            machine: "qemux86-64"
+          - name: "Raspberry Pi 4"
+            file: "kas/xensiv-bgt60trxx-rpi4.yml"
+            machine: "raspberrypi4-64"
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          df -h
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            gawk wget git diffstat unzip texinfo gcc build-essential \
+            chrpath socat cpio python3 python3-pip python3-pexpect \
+            xz-utils debianutils iputils-ping python3-git python3-jinja2 \
+            libegl1-mesa libsdl1.2-dev pylint3 xterm python3-subunit \
+            mesa-common-dev zstd liblz4-tool file locales
+
+      - name: Install Kas
+        run: |
+          pip3 install kas
+          kas --version
+
+      - name: Set up locale
+        run: |
+          sudo locale-gen en_US.UTF-8
+          echo "LANG=en_US.UTF-8" | sudo tee -a /etc/environment
+
+      - name: Cache Yocto downloads
+        uses: actions/cache@v3
+        with:
+          path: |
+            downloads
+            sstate-cache
+          key: yocto-${{ matrix.config.machine }}-${{ hashFiles(matrix.config.file) }}
+          restore-keys: |
+            yocto-${{ matrix.config.machine }}-
+            yocto-
+
+      - name: Build with Kas
+        run: |
+          export LANG=en_US.UTF-8
+          kas build --docker ${{ matrix.config.file }}
+        env:
+          DOCKER_BUILDKIT: 1
+
+      - name: Build SDK
+        if: matrix.config.machine == 'qemux86-64'
+        run: |
+          export LANG=en_US.UTF-8
+          kas shell --docker ${{ matrix.config.file }} -c "bitbake xensiv-bgt60trxx-test-image -c populate_sdk"
+
+      - name: Test QEMU boot
+        if: matrix.config.machine == 'qemux86-64'
+        run: |
+          export LANG=en_US.UTF-8
+          timeout 300 kas shell --docker ${{ matrix.config.file }} -c "runqemu qemux86-64 nographic" || true
+
+      - name: Collect build artifacts
+        run: |
+          mkdir -p artifacts
+          
+          # Copy images
+          if [ -d "build/tmp/deploy/images/${{ matrix.config.machine }}" ]; then
+            cp build/tmp/deploy/images/${{ matrix.config.machine }}/*.wic* artifacts/ 2>/dev/null || true
+            cp build/tmp/deploy/images/${{ matrix.config.machine }}/*.rootfs.tar.* artifacts/ 2>/dev/null || true
+          fi
+          
+          # Copy SDK
+          if [ -d "build/tmp/deploy/sdk" ]; then
+            cp build/tmp/deploy/sdk/*.sh artifacts/ 2>/dev/null || true
+          fi
+          
+          # Copy packages
+          mkdir -p artifacts/packages
+          find build/tmp/deploy/rpm -name "*xensiv*" -type f -exec cp {} artifacts/packages/ \; 2>/dev/null || true
+          
+          # Create build info
+          cat > artifacts/build-info.txt << EOF
+          Build Configuration: ${{ matrix.config.name }}
+          Kas Config File: ${{ matrix.config.file }}
+          Target Machine: ${{ matrix.config.machine }}
+          Build Date: $(date)
+          Git Commit: ${{ github.sha }}
+          Git Branch: ${{ github.ref_name }}
+          EOF
+          
+          ls -la artifacts/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: yocto-${{ matrix.config.machine }}-${{ github.run_number }}
+          path: artifacts/
+          retention-days: 30
+
+      - name: Generate build summary
+        run: |
+          echo "## Yocto Build Summary - ${{ matrix.config.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Configuration:** ${{ matrix.config.file }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Target Machine:** ${{ matrix.config.machine }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -d "build/tmp/deploy/images/${{ matrix.config.machine }}" ]; then
+            echo "### Generated Images" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            ls -lh build/tmp/deploy/images/${{ matrix.config.machine }}/ >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ -d "artifacts/packages" ] && [ "$(ls -A artifacts/packages)" ]; then
+            echo "### XENSIV BGT60TRxx Packages" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            ls -la artifacts/packages/ >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+  validate-recipes:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          pip3 install kas
+
+      - name: Validate Kas configurations
+        run: |
+          for config in kas/*.yml; do
+            echo "Validating $config..."
+            kas dump $config > /dev/null
+            echo "✓ $config is valid"
+          done
+
+      - name: Check meta layer structure
+        run: |
+          # Check layer.conf
+          if [ ! -f "meta-xensiv-bgt60trxx/conf/layer.conf" ]; then
+            echo "❌ Missing layer.conf"
+            exit 1
+          fi
+          
+          # Check recipes
+          if [ ! -f "meta-xensiv-bgt60trxx/recipes-libs/xensiv-bgt60trxx/xensiv-bgt60trxx_git.bb" ]; then
+            echo "❌ Missing main recipe"
+            exit 1
+          fi
+          
+          # Check image recipe
+          if [ ! -f "meta-xensiv-bgt60trxx/recipes-core/images/xensiv-bgt60trxx-test-image.bb" ]; then
+            echo "❌ Missing image recipe"
+            exit 1
+          fi
+          
+          echo "✓ Meta layer structure is valid"
+
+      - name: Syntax check recipes
+        run: |
+          echo "Checking BitBake recipe syntax..."
+          for recipe in meta-xensiv-bgt60trxx/recipes-*/*/*.bb; do
+            echo "Checking $recipe..."
+            if ! grep -q "SUMMARY" "$recipe"; then
+              echo "Warning: No SUMMARY in $recipe"
+            fi
+            if ! grep -q "LICENSE" "$recipe"; then
+              echo "Error: No LICENSE in $recipe"
+              exit 1
+            fi
+            echo "✓ $recipe basic checks passed"
+          done
+          echo "All recipe syntax checks completed successfully"

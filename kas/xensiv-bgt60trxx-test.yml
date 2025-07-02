@@ -1,0 +1,56 @@
+header:
+  version: 14
+  includes:
+    - base-image.yml
+
+machine: qemux86-64
+distro: poky
+
+target:
+  - xensiv-bgt60trxx-test-image
+
+repos:
+  poky:
+    url: https://git.yoctoproject.org/poky
+    refspec: kirkstone
+    layers:
+      base: meta
+      yocto: meta-yocto
+      bsp: meta-yocto-bsp
+
+  meta-openembedded:
+    url: https://git.openembedded.org/meta-openembedded
+    refspec: kirkstone
+    layers:
+      oe: meta-oe
+      python: meta-python
+      networking: meta-networking
+
+  xensiv-bgt60trxx:
+    url: .
+    layers:
+      xensiv: meta-xensiv-bgt60trxx
+
+local_conf_header:
+  base: |
+    # Enable systemd
+    DISTRO_FEATURES:append = " systemd"
+    VIRTUAL-RUNTIME_init_manager = "systemd"
+    
+    # Add development tools
+    EXTRA_IMAGE_FEATURES += "debug-tweaks tools-debug tools-profile"
+    
+    # Enable SPI and GPIO support
+    KERNEL_FEATURES:append = " features/spi/spi.scc features/gpio/gpio.scc"
+    
+    # Add XENSIV BGT60TRxx library to image
+    IMAGE_INSTALL:append = " xensiv-bgt60trxx xensiv-bgt60trxx-examples"
+    
+    # Add development packages
+    IMAGE_INSTALL:append = " xensiv-bgt60trxx-dev"
+    
+    # Add useful tools for testing
+    IMAGE_INSTALL:append = " spitools i2c-tools gpio-utils"
+    
+    # Enable package management
+    EXTRA_IMAGE_FEATURES += "package-management"

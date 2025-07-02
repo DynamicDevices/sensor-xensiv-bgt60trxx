@@ -18,6 +18,37 @@ This is a **cross-platform implementation** of the XENSIV™ BGT60TRxx library t
 - **SPI Communication**: Configurable SPI interface with burst mode support
 - **GPIO Control**: Reset and chip-select pin management
 - **FIFO Processing**: Advanced FIFO data handling with interrupt support
+- **Kas Build Support**: Automated Yocto image building with Kas tool integration
+
+## 🏗️ Kas Build Support
+
+This project now includes comprehensive [Kas](https://kas.readthedocs.io/) build support for creating Yocto Embedded Linux images with the XENSIV™ BGT60TRxx library pre-installed.
+
+### Quick Start with Kas
+
+```bash
+# Install Kas
+pip3 install kas
+
+# Build QEMU test image
+./kas-build.sh
+
+# Build with Docker (recommended)
+./kas-build.sh --docker
+
+# Build for Raspberry Pi 4
+./kas-build.sh --docker kas/xensiv-bgt60trxx-rpi4.yml
+
+# Build and run in QEMU
+./kas-build.sh --docker --qemu
+```
+
+### Available Images
+
+- **QEMU x86-64**: `kas/xensiv-bgt60trxx-test.yml` - For development and testing
+- **Raspberry Pi 4**: `kas/xensiv-bgt60trxx-rpi4.yml` - For hardware testing
+
+See [`kas/README.md`](kas/README.md) for detailed documentation.
 - **Error Handling**: Comprehensive error detection and recovery
 
 ### Platform Support

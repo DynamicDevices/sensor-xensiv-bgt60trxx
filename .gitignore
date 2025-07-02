@@ -52,3 +52,12 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.bak
+
+# Kas/Yocto build artifacts
+downloads/
+sstate-cache/
+cache/
+tmp/
+
+# Kas build script (keep in repo)
+# kas-build.sh
