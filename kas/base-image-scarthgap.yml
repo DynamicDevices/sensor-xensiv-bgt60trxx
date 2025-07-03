@@ -26,6 +26,9 @@ local_conf_header:
     # Basic Yocto configuration
     CONF_VERSION = "2"
 
+    # Distro features for Scarthgap
+    DISTRO_FEATURES:append = " usrmerge"
+
     # Parallel build configuration
     BB_NUMBER_THREADS ?= "${@oe.utils.cpu_count()}"
     PARALLEL_MAKE ?= "-j ${@oe.utils.cpu_count()}"

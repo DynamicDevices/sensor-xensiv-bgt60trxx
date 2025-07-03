@@ -18,8 +18,8 @@ repos:
 
 local_conf_header:
   base: |
-    # Enable systemd
-    DISTRO_FEATURES:append = " systemd"
+    # Enable systemd with usrmerge for Scarthgap
+    DISTRO_FEATURES:append = " systemd usrmerge"
     VIRTUAL-RUNTIME_init_manager = "systemd"
     
     # Add development tools

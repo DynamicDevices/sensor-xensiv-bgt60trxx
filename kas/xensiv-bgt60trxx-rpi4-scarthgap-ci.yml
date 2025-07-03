@@ -24,16 +24,14 @@ repos:
 
 local_conf_header:
   base: |
-    # Raspberry Pi 4 specific configuration
+    # Raspberry Pi 4 configuration
     ENABLE_UART = "1"
     ENABLE_SPI = "1"
     ENABLE_I2C = "1"
-    
-    # GPU memory split
     GPU_MEM = "128"
     
-    # Enable systemd
-    DISTRO_FEATURES:append = " systemd"
+    # Enable systemd with usrmerge for Scarthgap
+    DISTRO_FEATURES:append = " systemd usrmerge"
     VIRTUAL-RUNTIME_init_manager = "systemd"
     
     # Add development tools
@@ -45,7 +43,7 @@ local_conf_header:
     # Add development packages
     IMAGE_INSTALL:append = " xensiv-bgt60trxx-dev"
     
-    # Add useful tools for Raspberry Pi
+    # Add Raspberry Pi utilities
     IMAGE_INSTALL:append = " spitools i2c-tools libgpiod-tools rpi-gpio"
     
     # Enable package management
@@ -54,7 +52,5 @@ local_conf_header:
     # Add WiFi firmware
     IMAGE_INSTALL:append = " linux-firmware-rpidistro-bcm43455"
     
-    # Configure device tree overlays
-    ENABLE_SPI = "1"
-    KERNEL_DEVICETREE_OVERLAYS:append = " overlays/spi0-1cs.dtbo"
-    KERNEL_DEVICETREE_OVERLAYS:append = " overlays/spi0-2cs.dtbo"
+    # Device tree overlays for SPI
+    KERNEL_DEVICETREE:append = " overlays/spi0-1cs.dtbo overlays/spi0-2cs.dtbo"
