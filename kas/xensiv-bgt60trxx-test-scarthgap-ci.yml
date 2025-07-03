@@ -38,4 +38,4 @@ local_conf_header:
     IMAGE_INSTALL:append = " spitools i2c-tools gpio-utils"
     
     # Enable package management
-    EXTRA_IMAGE_FEATURES += "package-management"
+    IMAGE_INSTALL:append = " opkg"

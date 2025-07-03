@@ -49,11 +49,12 @@ local_conf_header:
     IMAGE_INSTALL:append = " spitools i2c-tools gpio-utils rpi-gpio"
     
     # Enable package management
-    EXTRA_IMAGE_FEATURES += "package-management"
+    IMAGE_INSTALL:append = " opkg"
     
-    # Add WiFi support
+    # Add WiFi firmware
     IMAGE_INSTALL:append = " linux-firmware-rpidistro-bcm43455"
     
-    # Device tree overlays for SPI
+    # Configure device tree overlays
     ENABLE_SPI = "1"
-    KERNEL_DEVICETREE:append:rpi = " overlays/spi0-1cs.dtbo overlays/spi0-2cs.dtbo"
+    KERNEL_DEVICETREE_OVERLAYS:append = " overlays/spi0-1cs.dtbo"
+    KERNEL_DEVICETREE_OVERLAYS:append = " overlays/spi0-2cs.dtbo"
