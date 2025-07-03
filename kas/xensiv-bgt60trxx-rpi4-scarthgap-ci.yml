@@ -1,0 +1,59 @@
+header:
+  version: 14
+  includes:
+    - base-image-scarthgap.yml
+
+machine: raspberrypi4-64
+distro: poky
+
+target:
+  - xensiv-bgt60trxx-test-image
+
+repos:
+  meta-raspberrypi:
+    url: https://git.yoctoproject.org/meta-raspberrypi
+    branch: scarthgap
+    layers:
+      meta-raspberrypi:
+
+  xensiv-bgt60trxx:
+    url: https://github.com/DynamicDevices/sensor-xensiv-bgt60trxx.git
+    branch: master
+    layers:
+      meta-xensiv-bgt60trxx:
+
+local_conf_header:
+  base: |
+    # Raspberry Pi 4 specific configuration
+    ENABLE_UART = "1"
+    ENABLE_SPI = "1"
+    ENABLE_I2C = "1"
+    
+    # GPU memory split
+    GPU_MEM = "128"
+    
+    # Enable systemd
+    DISTRO_FEATURES:append = " systemd"
+    VIRTUAL-RUNTIME_init_manager = "systemd"
+    
+    # Add development tools
+    EXTRA_IMAGE_FEATURES += "debug-tweaks tools-debug tools-profile"
+    
+    # Add XENSIV BGT60TRxx library to image
+    IMAGE_INSTALL:append = " xensiv-bgt60trxx xensiv-bgt60trxx-examples"
+    
+    # Add development packages
+    IMAGE_INSTALL:append = " xensiv-bgt60trxx-dev"
+    
+    # Add useful tools for Raspberry Pi
+    IMAGE_INSTALL:append = " spitools i2c-tools gpio-utils rpi-gpio"
+    
+    # Enable package management
+    EXTRA_IMAGE_FEATURES += "package-management"
+    
+    # Add WiFi support
+    IMAGE_INSTALL:append = " linux-firmware-rpidistro-bcm43455"
+    
+    # Device tree overlays for SPI
+    ENABLE_SPI = "1"
+    KERNEL_DEVICETREE:append:rpi = " overlays/spi0-1cs.dtbo overlays/spi0-2cs.dtbo"

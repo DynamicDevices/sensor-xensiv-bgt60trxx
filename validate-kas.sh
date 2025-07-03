@@ -43,46 +43,49 @@ check_kas() {
 # Validate a single Kas configuration file
 validate_config() {
     local config_file="$1"
-    local errors=0
-    
+    local filename=$(basename "$config_file")
+
     log_info "Validating configuration: $config_file"
-    
+
     # Check if file exists
     if [ ! -f "$config_file" ]; then
         log_error "Configuration file not found: $config_file"
         return 1
     fi
-    
-    # Check YAML syntax
-    if ! python3 -c "import yaml; yaml.safe_load(open('$config_file'))" 2>/dev/null; then
-        log_error "Invalid YAML syntax in $config_file"
-        ((errors++))
-    else
-        log_success "YAML syntax is valid"
+
+    # Skip validation for base image files (they're meant to be included)
+    if [[ "$filename" == "base-image"* ]]; then
+        log_info "Skipping validation for base image file: $filename"
+        log_success "Configuration $config_file is a base image (validation skipped)"
+        return 0
     fi
-    
-    # Check required fields
-    local required_fields=("header" "machine" "distro" "target")
+
+    local errors=0
+
+    # Validate YAML syntax
+    if python3 -c "import yaml; yaml.safe_load(open('$config_file'))" 2>/dev/null; then
+        log_success "YAML syntax is valid"
+    else
+        log_error "Invalid YAML syntax"
+        ((errors++))
+    fi
+
+    # Check for required fields (skip for base images)
+    local required_fields=("header" "machine" "distro" "target" "repos")
     for field in "${required_fields[@]}"; do
-        if ! grep -q "^$field:" "$config_file"; then
+        if ! grep -q "^${field}:" "$config_file"; then
             log_error "Missing required field: $field"
             ((errors++))
         fi
     done
-    
-    # Check if repos section exists
-    if ! grep -q "^repos:" "$config_file"; then
-        log_error "Missing repos section"
-        ((errors++))
-    fi
-    
-    # Check for xensiv-bgt60trxx repository
-    if ! grep -A 10 "^repos:" "$config_file" | grep -q "xensiv-bgt60trxx:"; then
+
+    # Check for xensiv-bgt60trxx repository definition
+    if ! grep -q "xensiv-bgt60trxx:" "$config_file"; then
         log_error "Missing xensiv-bgt60trxx repository definition"
         ((errors++))
     fi
-    
-    # Validate with kas (dry-run)
+
+    # Run kas validation (dry-run)
     log_info "Running Kas validation (dry-run)..."
     if kas dump "$config_file" > /dev/null 2>&1; then
         log_success "Kas validation passed"
@@ -90,7 +93,7 @@ validate_config() {
         log_error "Kas validation failed"
         ((errors++))
     fi
-    
+
     if [ $errors -eq 0 ]; then
         log_success "Configuration $config_file is valid"
         return 0

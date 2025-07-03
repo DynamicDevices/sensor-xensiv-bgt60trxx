@@ -10,36 +10,37 @@ on:
       kas_config:
         description: 'Kas configuration to build'
         required: false
-        default: 'kas/xensiv-bgt60trxx-test.yml'
+        default: 'kas/xensiv-bgt60trxx-test-kirkstone-ci.yml'
         type: choice
         options:
-          - kas/xensiv-bgt60trxx-test.yml
-          - kas/xensiv-bgt60trxx-rpi4.yml
-          - kas/xensiv-bgt60trxx-test-scarthgap.yml
-          - kas/xensiv-bgt60trxx-rpi4-scarthgap.yml
+          - kas/xensiv-bgt60trxx-test-kirkstone-ci.yml
+          - kas/xensiv-bgt60trxx-rpi4-kirkstone-ci.yml
+          - kas/xensiv-bgt60trxx-test-scarthgap-ci.yml
+          - kas/xensiv-bgt60trxx-rpi4-scarthgap-ci.yml
 
 jobs:
   yocto-build:
     runs-on: ubuntu-22.04
     strategy:
+      fail-fast: false  # Don't cancel other jobs if one fails
       matrix:
         config:
           # Kirkstone LTS builds
           - name: "QEMU x86-64 (Kirkstone)"
-            file: "kas/xensiv-bgt60trxx-test.yml"
+            file: "kas/xensiv-bgt60trxx-test-kirkstone-ci.yml"
             machine: "qemux86-64"
             yocto_version: "kirkstone"
           - name: "Raspberry Pi 4 (Kirkstone)"
-            file: "kas/xensiv-bgt60trxx-rpi4.yml"
+            file: "kas/xensiv-bgt60trxx-rpi4-kirkstone-ci.yml"
             machine: "raspberrypi4-64"
             yocto_version: "kirkstone"
           # Scarthgap LTS builds
           - name: "QEMU x86-64 (Scarthgap)"
-            file: "kas/xensiv-bgt60trxx-test-scarthgap.yml"
+            file: "kas/xensiv-bgt60trxx-test-scarthgap-ci.yml"
             machine: "qemux86-64"
             yocto_version: "scarthgap"
           - name: "Raspberry Pi 4 (Scarthgap)"
-            file: "kas/xensiv-bgt60trxx-rpi4-scarthgap.yml"
+            file: "kas/xensiv-bgt60trxx-rpi4-scarthgap-ci.yml"
             machine: "raspberrypi4-64"
             yocto_version: "scarthgap"
     
@@ -51,11 +52,27 @@ jobs:
 
       - name: Free up disk space
         run: |
+          echo "Disk usage before cleanup:"
+          df -h
+          
+          # Remove unnecessary packages and files
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
           sudo rm -rf /opt/hostedtoolcache/CodeQL
-          sudo docker image prune --all --force
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/local/graalvm/
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /usr/local/share/chromium
+          sudo rm -rf /usr/local/lib/node_modules
+          
+          # Clean Docker
+          sudo docker system prune -af
+          
+          # Clean apt cache
+          sudo apt-get clean
+          
+          echo "Disk usage after cleanup:"
           df -h
 
       - name: Install dependencies
@@ -66,17 +83,23 @@ jobs:
             chrpath socat cpio python3 python3-pip python3-pexpect \
             xz-utils debianutils iputils-ping python3-git python3-jinja2 \
             libegl1-mesa libsdl1.2-dev pylint xterm python3-subunit \
-            mesa-common-dev zstd liblz4-tool file locales libacl1
+            mesa-common-dev zstd liblz4-tool file locales libacl1 \
+            python3-yaml python3-distutils
 
       - name: Install Kas
         run: |
-          pip3 install kas
+          pip3 install --user kas
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           kas --version
 
       - name: Set up locale
         run: |
           sudo locale-gen en_US.UTF-8
           echo "LANG=en_US.UTF-8" | sudo tee -a /etc/environment
+
+      - name: Validate Kas configuration
+        run: |
+          ./validate-kas.sh ${{ matrix.config.file }}
 
       - name: Cache Yocto downloads
         uses: actions/cache@v4
@@ -105,7 +128,7 @@ jobs:
             poky
             meta-openembedded
             meta-raspberrypi
-          key: kas-repos-${{ matrix.config.yocto_version }}-${{ hashFiles('kas/*.yml') }}
+          key: kas-repos-${{ matrix.config.yocto_version }}-${{ hashFiles('kas/*-ci.yml') }}
           restore-keys: |
             kas-repos-${{ matrix.config.yocto_version }}-
             kas-repos-
@@ -129,61 +152,85 @@ jobs:
           echo "DL_DIR=$(pwd)/downloads" >> $GITHUB_ENV
           echo "SSTATE_DIR=$(pwd)/sstate-cache" >> $GITHUB_ENV
 
-          # Optimize build settings
-          echo "BB_NUMBER_THREADS=$(nproc)" >> $GITHUB_ENV
-          echo "PARALLEL_MAKE=-j$(nproc)" >> $GITHUB_ENV
+          # Optimize build settings for CI
+          echo "BB_NUMBER_THREADS=4" >> $GITHUB_ENV
+          echo "PARALLEL_MAKE=-j4" >> $GITHUB_ENV
+          
+          # Set memory limits to prevent OOM
+          echo "BB_DISKMON_DIRS = \"STOPTASKS,${TMPDIR},1G,100K STOPTASKS,${DL_DIR},1G,100K STOPTASKS,${SSTATE_DIR},1G,100K ABORT,${TMPDIR},100M,1K ABORT,${DL_DIR},100M,1K ABORT,${SSTATE_DIR},100M,1K\"" >> $GITHUB_ENV
 
-      - name: Build with Kas (native)
+      - name: Build with Kas
         run: |
           export LANG=en_US.UTF-8
+          export LC_ALL=en_US.UTF-8
           export KAS_WORK_DIR=$(pwd)
           export DL_DIR=$(pwd)/downloads
           export SSTATE_DIR=$(pwd)/sstate-cache
+          export KAS_REPO_REF_DIR=$(pwd)/.kas-cache
           
-          # Use kas directly instead of kas-container to avoid repository reference issues
+          # Show disk space before build
+          echo "Disk space before build:"
+          df -h
+          
+          # Use kas directly with CI-specific configurations
           kas build ${{ matrix.config.file }}
+          
+          # Show disk space after build
+          echo "Disk space after build:"
+          df -h
         env:
           # Pass cache directories
           KAS_WORK_DIR: ${{ env.KAS_WORK_DIR }}
           DL_DIR: ${{ env.DL_DIR }}
           SSTATE_DIR: ${{ env.SSTATE_DIR }}
+          KAS_REPO_REF_DIR: ${{ env.KAS_REPO_REF_DIR }}
 
       - name: Build SDK
         if: matrix.config.machine == 'qemux86-64'
         run: |
           export LANG=en_US.UTF-8
+          export LC_ALL=en_US.UTF-8
           export KAS_WORK_DIR=$(pwd)
           export DL_DIR=$(pwd)/downloads
           export SSTATE_DIR=$(pwd)/sstate-cache
+          export KAS_REPO_REF_DIR=$(pwd)/.kas-cache
           
           kas shell ${{ matrix.config.file }} -c "bitbake xensiv-bgt60trxx-test-image -c populate_sdk"
         env:
           KAS_WORK_DIR: ${{ env.KAS_WORK_DIR }}
           DL_DIR: ${{ env.DL_DIR }}
           SSTATE_DIR: ${{ env.SSTATE_DIR }}
+          KAS_REPO_REF_DIR: ${{ env.KAS_REPO_REF_DIR }}
 
       - name: Test QEMU boot
         if: matrix.config.machine == 'qemux86-64'
         run: |
           export LANG=en_US.UTF-8
+          export LC_ALL=en_US.UTF-8
           export KAS_WORK_DIR=$(pwd)
           
+          # Test QEMU boot with timeout
           timeout 300 kas shell ${{ matrix.config.file }} -c "runqemu qemux86-64 nographic" || true
         env:
           KAS_WORK_DIR: ${{ env.KAS_WORK_DIR }}
 
       - name: Collect build artifacts
+        if: always()
         run: |
           mkdir -p artifacts
           
           # Copy images
           if [ -d "build/tmp/deploy/images/${{ matrix.config.machine }}" ]; then
+            echo "Copying images for ${{ matrix.config.machine }}..."
             cp build/tmp/deploy/images/${{ matrix.config.machine }}/*.wic* artifacts/ 2>/dev/null || true
             cp build/tmp/deploy/images/${{ matrix.config.machine }}/*.rootfs.tar.* artifacts/ 2>/dev/null || true
+            cp build/tmp/deploy/images/${{ matrix.config.machine }}/*.manifest artifacts/ 2>/dev/null || true
+            cp build/tmp/deploy/images/${{ matrix.config.machine }}/README_-_DO_NOT_DELETE_FILES_IN_THIS_DIRECTORY.txt artifacts/ 2>/dev/null || true
           fi
           
           # Copy SDK
           if [ -d "build/tmp/deploy/sdk" ]; then
+            echo "Copying SDK..."
             cp build/tmp/deploy/sdk/*.sh artifacts/ 2>/dev/null || true
           fi
           
@@ -196,16 +243,21 @@ jobs:
           Build Configuration: ${{ matrix.config.name }}
           Kas Config File: ${{ matrix.config.file }}
           Target Machine: ${{ matrix.config.machine }}
+          Yocto Version: ${{ matrix.config.yocto_version }}
           Build Date: $(date)
           Git Commit: ${{ github.sha }}
           Git Branch: ${{ github.ref_name }}
+          Runner OS: ${{ runner.os }}
           EOF
           
           # List artifacts
           echo "Build artifacts:"
-          ls -la artifacts/
+          ls -la artifacts/ || true
+          echo "Total artifact size:"
+          du -sh artifacts/ || true
 
       - name: Upload build artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: yocto-build-${{ matrix.config.machine }}-${{ matrix.config.yocto_version }}
@@ -220,6 +272,7 @@ jobs:
           path: |
             build/tmp/log/
             build/tmp/work/*/temp/
+            build/conf/
           retention-days: 7
 
   # Summary job to check overall build status
@@ -238,6 +291,7 @@ jobs:
             exit 0
           elif [ "${{ needs.yocto-build.result }}" == "failure" ]; then
             echo "❌ One or more Yocto builds failed"
+            echo "Check the individual job logs for details"
             exit 1
           else
             echo "⚠️  Yocto builds completed with status: ${{ needs.yocto-build.result }}"

@@ -16,6 +16,34 @@ pipx install kas
 
 # Or using system package manager
 sudo apt install kas  # Ubuntu/Debian
+
+## 📋 Available Configurations
+
+### Development Configurations (Local Use)
+These configurations use `url: "."` to reference the current repository:
+
+#### Kirkstone LTS (Yocto 4.0)
+- **`xensiv-bgt60trxx-test.yml`** - QEMU x86-64 test image
+- **`xensiv-bgt60trxx-rpi4.yml`** - Raspberry Pi 4 image
+
+#### Scarthgap LTS (Yocto 5.0)
+- **`xensiv-bgt60trxx-test-scarthgap.yml`** - QEMU x86-64 test image
+- **`xensiv-bgt60trxx-rpi4-scarthgap.yml`** - Raspberry Pi 4 image
+
+### CI/CD Configurations (Automated Builds)
+These configurations use the GitHub repository URL for CI environments:
+
+#### Kirkstone LTS (Yocto 4.0)
+- **`xensiv-bgt60trxx-test-kirkstone-ci.yml`** - QEMU x86-64 test image (CI)
+- **`xensiv-bgt60trxx-rpi4-kirkstone-ci.yml`** - Raspberry Pi 4 image (CI)
+
+#### Scarthgap LTS (Yocto 5.0)
+- **`xensiv-bgt60trxx-test-scarthgap-ci.yml`** - QEMU x86-64 test image (CI)
+- **`xensiv-bgt60trxx-rpi4-scarthgap-ci.yml`** - Raspberry Pi 4 image (CI)
+
+### Base Configurations
+- **`base-image.yml`** - Common base configuration for Kirkstone
+- **`base-image-scarthgap.yml`** - Common base configuration for Scarthgap
 ```
 
 ### Build an Image
