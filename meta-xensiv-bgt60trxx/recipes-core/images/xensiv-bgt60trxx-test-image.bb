@@ -30,7 +30,7 @@ IMAGE_INSTALL += "\
 IMAGE_INSTALL += "\
     spitools \
     i2c-tools \
-    gpio-utils \
+    libgpiod-tools \
     strace \
     gdb \
     gdbserver \

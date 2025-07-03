@@ -47,7 +47,7 @@ local_conf_header:
     IMAGE_INSTALL:append = " xensiv-bgt60trxx-dev"
     
     # Add useful tools for Raspberry Pi
-    IMAGE_INSTALL:append = " spitools i2c-tools gpio-utils rpi-gpio"
+    IMAGE_INSTALL:append = " spitools i2c-tools libgpiod-tools rpi-gpio"
     
     # Enable package management
     IMAGE_INSTALL:append = " opkg"

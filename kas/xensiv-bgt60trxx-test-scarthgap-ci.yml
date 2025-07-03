@@ -35,7 +35,7 @@ local_conf_header:
     IMAGE_INSTALL:append = " xensiv-bgt60trxx-dev"
     
     # Add useful tools for testing
-    IMAGE_INSTALL:append = " spitools i2c-tools gpio-utils"
+    IMAGE_INSTALL:append = " spitools i2c-tools libgpiod-tools"
     
     # Enable package management
     IMAGE_INSTALL:append = " opkg"

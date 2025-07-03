@@ -11,7 +11,7 @@ RDEPENDS:${PN} = "\
     xensiv-bgt60trxx-examples \
     spitools \
     i2c-tools \
-    gpio-utils \
+    libgpiod-tools \
     cmake \
     gcc \
     g++ \
