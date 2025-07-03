@@ -52,5 +52,6 @@ local_conf_header:
     # Enable package management
     EXTRA_IMAGE_FEATURES += "package-management"
     
-    # Add WiFi support
-    IMAGE_INSTALL:append = " linux-firmware-rpidistro-bcm43455"
+    # Device tree overlays for SPI
+    ENABLE_SPI = "1"
+    KERNEL_DEVICETREE:append:rpi = " overlays/spi0-1cs.dtbo overlays/spi0-2cs.dtbo"

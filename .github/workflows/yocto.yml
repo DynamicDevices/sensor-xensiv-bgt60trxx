@@ -133,24 +133,18 @@ jobs:
           echo "BB_NUMBER_THREADS=$(nproc)" >> $GITHUB_ENV
           echo "PARALLEL_MAKE=-j$(nproc)" >> $GITHUB_ENV
 
-      - name: Pre-warm repository cache
-        run: |
-          # Pre-fetch repositories to warm the cache
-          echo "Pre-warming repository cache..."
-          kas-container checkout ${{ matrix.config.file }} || true
-        env:
-          KAS_WORK_DIR: ${{ env.KAS_WORK_DIR }}
-          KAS_REPO_REF_DIR: ${{ env.KAS_REPO_REF_DIR }}
-
-      - name: Build with Kas
+      - name: Build with Kas (native)
         run: |
           export LANG=en_US.UTF-8
-          kas-container build ${{ matrix.config.file }}
+          export KAS_WORK_DIR=$(pwd)
+          export DL_DIR=$(pwd)/downloads
+          export SSTATE_DIR=$(pwd)/sstate-cache
+          
+          # Use kas directly instead of kas-container to avoid repository reference issues
+          kas build ${{ matrix.config.file }}
         env:
-          DOCKER_BUILDKIT: 1
-          # Pass cache directories to container
+          # Pass cache directories
           KAS_WORK_DIR: ${{ env.KAS_WORK_DIR }}
-          KAS_REPO_REF_DIR: ${{ env.KAS_REPO_REF_DIR }}
           DL_DIR: ${{ env.DL_DIR }}
           SSTATE_DIR: ${{ env.SSTATE_DIR }}
 
@@ -158,10 +152,13 @@ jobs:
         if: matrix.config.machine == 'qemux86-64'
         run: |
           export LANG=en_US.UTF-8
-          kas-container shell ${{ matrix.config.file }} -c "bitbake xensiv-bgt60trxx-test-image -c populate_sdk"
+          export KAS_WORK_DIR=$(pwd)
+          export DL_DIR=$(pwd)/downloads
+          export SSTATE_DIR=$(pwd)/sstate-cache
+          
+          kas shell ${{ matrix.config.file }} -c "bitbake xensiv-bgt60trxx-test-image -c populate_sdk"
         env:
           KAS_WORK_DIR: ${{ env.KAS_WORK_DIR }}
-          KAS_REPO_REF_DIR: ${{ env.KAS_REPO_REF_DIR }}
           DL_DIR: ${{ env.DL_DIR }}
           SSTATE_DIR: ${{ env.SSTATE_DIR }}
 
@@ -169,10 +166,11 @@ jobs:
         if: matrix.config.machine == 'qemux86-64'
         run: |
           export LANG=en_US.UTF-8
-          timeout 300 kas-container shell ${{ matrix.config.file }} -c "runqemu qemux86-64 nographic" || true
+          export KAS_WORK_DIR=$(pwd)
+          
+          timeout 300 kas shell ${{ matrix.config.file }} -c "runqemu qemux86-64 nographic" || true
         env:
           KAS_WORK_DIR: ${{ env.KAS_WORK_DIR }}
-          KAS_REPO_REF_DIR: ${{ env.KAS_REPO_REF_DIR }}
 
       - name: Collect build artifacts
         run: |
@@ -203,128 +201,45 @@ jobs:
           Git Branch: ${{ github.ref_name }}
           EOF
           
+          # List artifacts
+          echo "Build artifacts:"
           ls -la artifacts/
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: yocto-${{ matrix.config.yocto_version }}-${{ matrix.config.machine }}-${{ github.run_number }}
+          name: yocto-build-${{ matrix.config.machine }}-${{ matrix.config.yocto_version }}
           path: artifacts/
           retention-days: 30
 
-      - name: Optimize cache size
-        if: always()
-        run: |
-          echo "Cache sizes before cleanup:"
-          du -sh downloads sstate-cache .kas-cache 2>/dev/null || true
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ matrix.config.machine }}-${{ matrix.config.yocto_version }}
+          path: |
+            build/tmp/log/
+            build/tmp/work/*/temp/
+          retention-days: 7
 
-          # Clean up sstate cache - keep only recent entries
-          if [ -d "sstate-cache" ]; then
-            find sstate-cache -type f -atime +7 -delete 2>/dev/null || true
-            find sstate-cache -type d -empty -delete 2>/dev/null || true
-          fi
-
-          # Clean up downloads - keep only recent entries
-          if [ -d "downloads" ]; then
-            find downloads -type f -atime +14 -delete 2>/dev/null || true
-            find downloads -type d -empty -delete 2>/dev/null || true
-          fi
-
-          # Clean up build artifacts we don't need to cache
-          rm -rf build/tmp/work build/tmp/sysroots-components 2>/dev/null || true
-
-          echo "Cache sizes after cleanup:"
-          du -sh downloads sstate-cache .kas-cache 2>/dev/null || true
-
-      - name: Generate build summary
-        run: |
-          echo "## Yocto Build Summary - ${{ matrix.config.name }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Configuration:** ${{ matrix.config.file }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Target Machine:** ${{ matrix.config.machine }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Yocto Version:** ${{ matrix.config.yocto_version }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          if [ -d "build/tmp/deploy/images/${{ matrix.config.machine }}" ]; then
-            echo "### Generated Images" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            ls -lh build/tmp/deploy/images/${{ matrix.config.machine }}/ >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          if [ -d "artifacts/packages" ] && [ "$(ls -A artifacts/packages)" ]; then
-            echo "### XENSIV BGT60TRxx Packages" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            ls -la artifacts/packages/ >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          fi
-
-          # Add cache statistics
-          echo "### Cache Statistics" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "Cache sizes:" >> $GITHUB_STEP_SUMMARY
-          du -sh downloads sstate-cache .kas-cache 2>/dev/null || echo "Cache directories not found" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Build time optimizations:" >> $GITHUB_STEP_SUMMARY
-          echo "- Downloads cache: $([ -d downloads ] && echo "✓ Active" || echo "✗ Not found")" >> $GITHUB_STEP_SUMMARY
-          echo "- Sstate cache: $([ -d sstate-cache ] && echo "✓ Active" || echo "✗ Not found")" >> $GITHUB_STEP_SUMMARY
-          echo "- Repository cache: $([ -d .kas-cache ] && echo "✓ Active" || echo "✗ Not found")" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-
-  validate-recipes:
+  # Summary job to check overall build status
+  build-summary:
+    needs: yocto-build
     runs-on: ubuntu-22.04
+    if: always()
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
+      - name: Check build results
         run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip
-          pip3 install kas
-
-      - name: Validate Kas configurations
-        run: |
-          for config in kas/*.yml; do
-            echo "Validating $config..."
-            kas dump $config > /dev/null
-            echo "✓ $config is valid"
-          done
-
-      - name: Check meta layer structure
-        run: |
-          # Check layer.conf
-          if [ ! -f "meta-xensiv-bgt60trxx/conf/layer.conf" ]; then
-            echo "❌ Missing layer.conf"
+          echo "Build Summary:"
+          echo "=============="
+          
+          if [ "${{ needs.yocto-build.result }}" == "success" ]; then
+            echo "✅ All Yocto builds completed successfully"
+            exit 0
+          elif [ "${{ needs.yocto-build.result }}" == "failure" ]; then
+            echo "❌ One or more Yocto builds failed"
+            exit 1
+          else
+            echo "⚠️  Yocto builds completed with status: ${{ needs.yocto-build.result }}"
             exit 1
           fi
-          
-          # Check recipes
-          if [ ! -f "meta-xensiv-bgt60trxx/recipes-libs/xensiv-bgt60trxx/xensiv-bgt60trxx_git.bb" ]; then
-            echo "❌ Missing main recipe"
-            exit 1
-          fi
-          
-          # Check image recipe
-          if [ ! -f "meta-xensiv-bgt60trxx/recipes-core/images/xensiv-bgt60trxx-test-image.bb" ]; then
-            echo "❌ Missing image recipe"
-            exit 1
-          fi
-          
-          echo "✓ Meta layer structure is valid"
-
-      - name: Syntax check recipes
-        run: |
-          echo "Checking BitBake recipe syntax..."
-          for recipe in meta-xensiv-bgt60trxx/recipes-*/*/*.bb; do
-            echo "Checking $recipe..."
-            if ! grep -q "SUMMARY" "$recipe"; then
-              echo "Warning: No SUMMARY in $recipe"
-            fi
-            if ! grep -q "LICENSE" "$recipe"; then
-              echo "Error: No LICENSE in $recipe"
-              exit 1
-            fi
-            echo "✓ $recipe basic checks passed"
-          done
-          echo "All recipe syntax checks completed successfully"

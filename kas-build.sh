@@ -56,8 +56,13 @@ CONFIG_FILE:
     Path to Kas configuration file (default: $DEFAULT_CONFIG)
 
 Available configurations:
-    kas/xensiv-bgt60trxx-test.yml    - QEMU x86-64 test image
-    kas/xensiv-bgt60trxx-rpi4.yml    - Raspberry Pi 4 image
+    Kirkstone LTS (4.0):
+      kas/xensiv-bgt60trxx-test.yml    - QEMU x86-64 test image
+      kas/xensiv-bgt60trxx-rpi4.yml    - Raspberry Pi 4 image
+
+    Scarthgap LTS (5.0):
+      kas/xensiv-bgt60trxx-test-scarthgap.yml    - QEMU x86-64 test image
+      kas/xensiv-bgt60trxx-rpi4-scarthgap.yml    - Raspberry Pi 4 image
 
 Examples:
     $0                                          # Build default QEMU image
@@ -65,6 +70,7 @@ Examples:
     $0 -d -c kas/xensiv-bgt60trxx-rpi4.yml     # Clean build for RPi4 with Docker
     $0 -s -q                                    # Build, create SDK, and run QEMU
     $0 --docker --clean --sdk                  # Full build with Docker, clean, and SDK
+    $0 kas/xensiv-bgt60trxx-test-scarthgap.yml # Build Scarthgap QEMU image
 
 EOF
 }
@@ -116,28 +122,33 @@ check_requirements() {
 # Build the image
 build_image() {
     local config_file="$1"
+    local kas_cmd="kas"
     local kas_args=""
-    
+
     if [ "$USE_DOCKER" = true ]; then
-        kas_args="$kas_args --docker"
+        # Use kas-container for Docker builds, but handle local repository properly
+        kas_cmd="kas-container"
+        # Set up proper volume mounts for local repository
+        export KAS_CONTAINER_ENGINE_ARGS="--volume $(pwd):$(pwd):rw"
     fi
-    
+
     if [ "$CLEAN_BUILD" = true ]; then
         kas_args="$kas_args --force-checkout"
     fi
-    
+
     if [ "$VERBOSE" = true ]; then
         kas_args="$kas_args --verbose"
     fi
-    
+
     log_info "Building image with configuration: $config_file"
+    log_info "Using command: $kas_cmd"
     log_info "Kas arguments: $kas_args"
-    
+
     # Record start time
     start_time=$(date +%s)
-    
+
     # Run the build
-    if kas build $kas_args "$config_file"; then
+    if $kas_cmd build $kas_args "$config_file"; then
         end_time=$(date +%s)
         duration=$((end_time - start_time))
         log_success "Image build completed in $((duration / 60))m $((duration % 60))s"
@@ -151,17 +162,20 @@ build_image() {
 # Build SDK
 build_sdk() {
     local config_file="$1"
+    local kas_cmd="kas"
     local kas_args=""
-    
+
     if [ "$USE_DOCKER" = true ]; then
-        kas_args="$kas_args --docker"
+        kas_cmd="kas-container"
+        # Ensure volume mounts are set for Docker
+        export KAS_CONTAINER_ENGINE_ARGS="--volume $(pwd):$(pwd):rw"
     fi
-    
+
     log_info "Building SDK..."
-    
-    if kas shell $kas_args "$config_file" -c "bitbake xensiv-bgt60trxx-test-image -c populate_sdk"; then
+
+    if $kas_cmd shell $kas_args "$config_file" -c "bitbake xensiv-bgt60trxx-test-image -c populate_sdk"; then
         log_success "SDK build completed"
-        
+
         # Find and display SDK installer
         sdk_installer=$(find build/tmp/deploy/sdk/ -name "*.sh" 2>/dev/null | head -1)
         if [ -n "$sdk_installer" ]; then
@@ -178,12 +192,15 @@ build_sdk() {
 # Run QEMU
 run_qemu() {
     local config_file="$1"
+    local kas_cmd="kas"
     local kas_args=""
-    
+
     if [ "$USE_DOCKER" = true ]; then
-        kas_args="$kas_args --docker"
+        kas_cmd="kas-container"
+        # Ensure volume mounts are set for Docker
+        export KAS_CONTAINER_ENGINE_ARGS="--volume $(pwd):$(pwd):rw"
     fi
-    
+
     # Check if this is a QEMU-compatible configuration
     if ! grep -q "qemu" "$config_file"; then
         log_warning "Configuration doesn't appear to be QEMU-compatible"
@@ -193,14 +210,14 @@ run_qemu() {
             return 0
         fi
     fi
-    
+
     log_info "Starting QEMU..."
     log_info "Use Ctrl+A, X to exit QEMU"
-    
+
     # Determine machine type from config
     machine=$(grep "^machine:" "$config_file" | cut -d' ' -f2)
-    
-    kas shell $kas_args "$config_file" -c "runqemu $machine nographic"
+
+    $kas_cmd shell $kas_args "$config_file" -c "runqemu $machine nographic"
 }
 
 # Display build results

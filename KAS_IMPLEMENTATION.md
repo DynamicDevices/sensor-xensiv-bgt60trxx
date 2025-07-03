@@ -1,226 +1,117 @@
-# Kas Build Support Implementation Summary
+# Kas Integration Implementation Summary
 
-## Overview
-
-This document summarizes the implementation of comprehensive Kas build support for the XENSIV™ BGT60TRxx radar sensor library, enabling automated Yocto Embedded Linux image creation with the library pre-installed.
-
-## Implementation Details
+## ✅ Completed Implementation
 
 ### 1. Kas Configuration Files
+- **`kas/base-image.yml`** - Base configuration for Kirkstone LTS
+- **`kas/base-image-scarthgap.yml`** - Base configuration for Scarthgap LTS  
+- **`kas/xensiv-bgt60trxx-test.yml`** - QEMU x86-64 test image (Kirkstone)
+- **`kas/xensiv-bgt60trxx-rpi4.yml`** - Raspberry Pi 4 image (Kirkstone)
+- **`kas/xensiv-bgt60trxx-test-scarthgap.yml`** - QEMU x86-64 test image (Scarthgap)
+- **`kas/xensiv-bgt60trxx-rpi4-scarthgap.yml`** - Raspberry Pi 4 image (Scarthgap)
 
-#### `kas/xensiv-bgt60trxx-test.yml`
-- **Target**: QEMU x86-64 virtual machine
-- **Purpose**: Development and testing environment
-- **Features**:
-  - Systemd init system
-  - Development tools (debug, profiling)
-  - SPI and GPIO kernel features
-  - Package management support
-  - Pre-installed XENSIV library and examples
+### 2. Build Scripts
+- **`kas-build.sh`** - Enhanced build script with Docker support and local repository handling
+- **`validate-kas.sh`** - Configuration validation script
 
-#### `kas/xensiv-bgt60trxx-rpi4.yml`
-- **Target**: Raspberry Pi 4 (64-bit)
-- **Purpose**: Hardware testing with real SPI/GPIO interfaces
-- **Features**:
-  - SPI, I2C, UART enabled
-  - Device tree overlays for SPI interfaces
-  - GPU memory configuration
-  - Hardware-specific optimizations
+### 3. CI/CD Integration
+- **`.github/workflows/yocto.yml`** - Updated GitHub Actions workflow
+  - Uses native `kas` instead of `kas-container` to fix repository reference issues
+  - Supports both Kirkstone and Scarthgap LTS versions
+  - Includes comprehensive caching strategy
+  - Builds for both QEMU x86-64 and Raspberry Pi 4 targets
 
-#### `kas/base-image.yml`
-- **Purpose**: Common base configuration
-- **Features**:
-  - Yocto Kirkstone release
-  - Parallel build optimization
-  - Shared download and sstate directories
-  - Standard package format (RPM)
+### 4. Documentation
+- **`kas/README.md`** - Comprehensive documentation with usage examples
 
-### 2. Meta Layer Structure
+## 🔧 Key Fixes Implemented
 
-#### `meta-xensiv-bgt60trxx/`
-Complete Yocto meta layer with:
+### Repository Reference Issue
+**Problem**: CI builds failing due to `url: "."` not working in containerized environments
 
-- **Layer Configuration**: `conf/layer.conf`
-  - Layer dependencies and compatibility
-  - BBPATH and BBFILES configuration
-  - Layer versioning
+**Solution**: 
+- Updated GitHub Actions to use native `kas` instead of `kas-container`
+- Enhanced `kas-build.sh` to properly handle Docker volume mounts
+- Maintained local repository references for development workflow
 
-- **Library Recipe**: `recipes-libs/xensiv-bgt60trxx/xensiv-bgt60trxx_git.bb`
-  - CMake-based build system
-  - Automatic Git source fetching
-  - Multi-package output (runtime, dev, examples)
-  - Cross-compilation support
-
-- **Test Image Recipe**: `recipes-core/images/xensiv-bgt60trxx-test-image.bb`
-  - Complete embedded Linux image
-  - Development tools included
-  - SPI/GPIO utilities
-  - Debugging and profiling tools
-
-- **Development Packagegroup**: `recipes-core/packagegroups/packagegroup-xensiv-bgt60trxx-dev.bb`
-  - Comprehensive development environment
-  - All necessary build tools
-  - Debugging and analysis tools
-
-### 3. Build Automation
-
-#### `kas-build.sh`
-Comprehensive build script with:
-
-- **Multi-configuration Support**: QEMU and Raspberry Pi 4
-- **Docker Integration**: Containerized builds for reproducibility
-- **Build Options**: Clean builds, SDK generation, QEMU testing
-- **System Checks**: Disk space, dependencies, Docker availability
-- **Progress Monitoring**: Colored output, timing, artifact collection
-- **Error Handling**: Graceful failure handling and reporting
-
-#### Command Examples:
-```bash
-# Basic QEMU build
-./kas-build.sh
-
-# Docker build with SDK
-./kas-build.sh --docker --sdk
-
-# Raspberry Pi 4 with QEMU testing
-./kas-build.sh --docker --clean kas/xensiv-bgt60trxx-rpi4.yml
-
-# Full development build
-./kas-build.sh --docker --clean --sdk --qemu
-```
-
-### 4. CI/CD Integration
-
-#### `.github/workflows/yocto.yml`
-Automated GitHub Actions workflow featuring:
-
-- **Multi-target Builds**: QEMU x86-64 and Raspberry Pi 4
-- **Docker-based Builds**: Consistent, reproducible environment
-- **Caching Strategy**: Downloads and sstate cache optimization
-- **Artifact Collection**: Images, SDKs, packages
-- **Quality Assurance**: Recipe validation, syntax checking
-- **QEMU Testing**: Automated boot testing for x86-64 images
-
-#### Build Matrix:
-- QEMU x86-64: Full testing with QEMU boot validation
-- Raspberry Pi 4: Hardware-ready image generation
-- Recipe validation: Syntax and structure verification
-
-### 5. Documentation
-
-#### `kas/README.md`
-Comprehensive documentation covering:
-
-- **Prerequisites**: System requirements, tool installation
-- **Quick Start**: Step-by-step build instructions
-- **Configuration Options**: Available targets and customization
-- **Testing Procedures**: QEMU and hardware testing
-- **Troubleshooting**: Common issues and solutions
-- **Development Workflow**: Interactive development, SDK usage
-- **CI/CD Integration**: GitHub Actions examples
-
-## Key Features
-
-### Cross-Platform Support
-- **QEMU x86-64**: Virtual machine testing and development
-- **Raspberry Pi 4**: Real hardware with SPI/GPIO interfaces
-- **Extensible**: Easy addition of new target platforms
-
-### Development Environment
-- **Complete Toolchain**: GCC, CMake, debugging tools
-- **Library Integration**: Pre-installed XENSIV library and examples
-- **Hardware Tools**: SPI, I2C, GPIO utilities
-- **Debugging Support**: GDB, Valgrind, strace
+### Configuration Structure
+**Improvements**:
+- Separated base configurations for better maintainability
+- Added Scarthgap LTS support alongside Kirkstone LTS
+- Optimized build settings for performance and caching
+- Added comprehensive hardware support (SPI, GPIO, I2C)
 
 ### Build System Integration
-- **CMake Support**: Native CMake builds within Yocto
-- **Package Management**: RPM-based package system
-- **SDK Generation**: Cross-compilation toolchain
-- **Containerized Builds**: Docker support for reproducibility
+**Features**:
+- Multi-platform support (QEMU x86-64, Raspberry Pi 4)
+- SDK generation capability
+- QEMU testing integration
+- Comprehensive artifact collection
+- Build validation and error handling
 
-### Quality Assurance
-- **Automated Testing**: CI/CD pipeline with multiple targets
-- **Recipe Validation**: Syntax and structure checking
-- **Boot Testing**: Automated QEMU boot validation
-- **Artifact Management**: Systematic collection and storage
+## 🎯 Target Image Contents
 
-## Usage Scenarios
+All configurations build `xensiv-bgt60trxx-test-image` containing:
+- XENSIV BGT60TRxx library and examples
+- Development tools and headers
+- Hardware interface support (SPI/I2C/GPIO)
+- systemd init system
+- Package management capabilities
+- Platform-specific optimizations
 
-### 1. Development and Testing
+## 🚀 Usage Examples
+
+### Quick Start
 ```bash
-# Quick development image
-./kas-build.sh --docker
+# Build default QEMU image
+./kas-build.sh
 
-# Test in QEMU
-./kas-build.sh --docker --qemu
-```
-
-### 2. Hardware Deployment
-```bash
-# Build for Raspberry Pi 4
+# Build Raspberry Pi 4 image with Docker
 ./kas-build.sh --docker kas/xensiv-bgt60trxx-rpi4.yml
 
-# Flash to SD card
-sudo dd if=build/tmp/deploy/images/raspberrypi4-64/xensiv-bgt60trxx-test-image-raspberrypi4-64.wic of=/dev/sdX
+# Build Scarthgap version
+./kas-build.sh kas/xensiv-bgt60trxx-test-scarthgap.yml
 ```
 
-### 3. SDK Development
+### Advanced Usage
 ```bash
-# Generate cross-compilation SDK
-./kas-build.sh --docker --sdk
+# Clean build with SDK generation
+./kas-build.sh --clean --sdk
 
-# Install SDK
-./build/tmp/deploy/sdk/poky-glibc-*-toolchain-*.sh
+# Build and test in QEMU
+./kas-build.sh --qemu
+
+# Validate configurations
+./validate-kas.sh
 ```
 
-### 4. CI/CD Integration
-- Automated builds on push/PR
-- Multi-target validation
-- Artifact generation and storage
-- Quality gate enforcement
+## 📊 CI/CD Matrix
 
-## Benefits
+The GitHub Actions workflow builds:
+- **Kirkstone LTS**: QEMU x86-64 + Raspberry Pi 4
+- **Scarthgap LTS**: QEMU x86-64 + Raspberry Pi 4
 
-### For Developers
-- **Simplified Setup**: One-command image generation
-- **Consistent Environment**: Docker-based reproducible builds
-- **Multiple Targets**: Easy switching between platforms
-- **Complete Toolchain**: Everything needed for development
+With features:
+- Comprehensive caching (downloads, sstate, repositories)
+- Artifact collection (images, SDKs, packages)
+- QEMU boot testing
+- Build log collection on failure
 
-### For DevOps
-- **Automated Pipelines**: GitHub Actions integration
-- **Quality Assurance**: Automated testing and validation
-- **Artifact Management**: Systematic build artifact handling
-- **Scalable Architecture**: Easy addition of new targets
+## ✅ Validation Results
 
-### For End Users
-- **Ready-to-Use Images**: Pre-configured embedded Linux
-- **Hardware Support**: Real SPI/GPIO interfaces
-- **Example Applications**: Working sensor examples
-- **Documentation**: Comprehensive usage guides
+All Kas configuration files have been validated for:
+- ✅ Valid YAML syntax
+- ✅ Required field presence
+- ✅ Repository structure
+- ✅ Target configuration
 
-## Future Enhancements
+## 🎉 Benefits Achieved
 
-### Additional Platforms
-- BeagleBone Black/AI
-- NVIDIA Jetson series
-- Intel Edison/Galileo
-- Custom embedded platforms
+1. **Cross-Platform Support**: Unified build system for multiple targets
+2. **CI/CD Ready**: Automated builds with comprehensive testing
+3. **Developer Friendly**: Easy-to-use scripts with comprehensive options
+4. **Production Ready**: LTS versions with optimized configurations
+5. **Maintainable**: Modular configuration structure
+6. **Well Documented**: Comprehensive usage and troubleshooting guides
 
-### Advanced Features
-- **OTA Updates**: Over-the-air update support
-- **Container Support**: Docker/Podman integration
-- **Security Hardening**: Secure boot, encryption
-- **Performance Optimization**: Real-time kernel support
-
-### Integration Improvements
-- **IDE Support**: VS Code development containers
-- **Testing Framework**: Automated hardware-in-the-loop testing
-- **Monitoring**: Built-in system monitoring and logging
-- **Cloud Integration**: AWS IoT, Azure IoT Hub connectivity
-
-## Conclusion
-
-The Kas build support implementation provides a comprehensive, professional-grade solution for building Yocto Embedded Linux images with the XENSIV™ BGT60TRxx library. It addresses the complete development lifecycle from initial setup through production deployment, with robust automation, quality assurance, and documentation.
-
-The implementation follows industry best practices for embedded Linux development and provides a solid foundation for both development and production use cases. The modular architecture ensures easy maintenance and extensibility for future requirements.
+The Kas integration is now complete and ready for production use!

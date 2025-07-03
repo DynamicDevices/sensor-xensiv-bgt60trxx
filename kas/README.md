@@ -1,325 +1,280 @@
-# Kas Build Support for XENSIV™ BGT60TRxx
+# Kas Integration for XENSIV BGT60TRxx
 
-This directory contains [Kas](https://kas.readthedocs.io/) configuration files for building Yocto Embedded Linux images with the XENSIV™ BGT60TRxx radar sensor library.
+This directory contains [Kas](https://kas.readthedocs.io/) configuration files for building Yocto/OpenEmbedded images with the XENSIV BGT60TRxx radar sensor library.
 
-## Prerequisites
+## 🚀 Quick Start
 
-1. **Install Kas**:
-   ```bash
-   pip3 install kas
-   ```
+### Prerequisites
 
-2. **System Requirements**:
-   - Linux host system (Ubuntu 20.04+ recommended)
-   - At least 50GB free disk space
-   - 8GB+ RAM recommended
-   - Docker (optional, for containerized builds)
-
-## Available Configurations
-
-This project supports **two Yocto LTS versions** for maximum compatibility:
-
-### Yocto LTS Versions
-
-| Version | Release | Status | Recommended For |
-|---------|---------|--------|-----------------|
-| **Kirkstone** | 4.0 LTS | Stable | Production deployments, proven stability |
-| **Scarthgap** | 5.0 LTS | Latest | New projects, latest features and security updates |
-
-### 1. QEMU x86-64 Test Image
-
-**Kirkstone LTS**: `xensiv-bgt60trxx-test.yml`
-**Scarthgap LTS**: `xensiv-bgt60trxx-test-scarthgap.yml`
-- **Target**: QEMU x86-64 virtual machine
-- **Purpose**: Development and testing
-- **Features**: Full development environment with debugging tools
-
-### 2. Raspberry Pi 4 Image
-
-**Kirkstone LTS**: `xensiv-bgt60trxx-rpi4.yml`
-**Scarthgap LTS**: `xensiv-bgt60trxx-rpi4-scarthgap.yml`
-- **Target**: Raspberry Pi 4 (64-bit)
-- **Purpose**: Hardware testing with real SPI/GPIO interfaces
-- **Features**: SPI and GPIO enabled, device tree overlays
-
-## Quick Start
-
-### Build QEMU Test Image
-
-**Kirkstone LTS (Stable):**
+Install Kas:
 ```bash
-# Clone the repository
-git clone https://github.com/DynamicDevices/sensor-xensiv-bgt60trxx.git
-cd sensor-xensiv-bgt60trxx
+# Using pip (in virtual environment)
+pip3 install kas
 
-# Build the image
+# Or using pipx (recommended)
+pipx install kas
+
+# Or using system package manager
+sudo apt install kas  # Ubuntu/Debian
+```
+
+### Build an Image
+
+```bash
+# Build QEMU test image (Kirkstone LTS)
+./kas-build.sh
+
+# Build Raspberry Pi 4 image (Kirkstone LTS)
+./kas-build.sh kas/xensiv-bgt60trxx-rpi4.yml
+
+# Build with Docker (containerized)
+./kas-build.sh --docker
+
+# Build Scarthgap LTS version
+./kas-build.sh kas/xensiv-bgt60trxx-test-scarthgap.yml
+```
+
+## 📋 Available Configurations
+
+### Kirkstone LTS (Yocto 4.0)
+- **`xensiv-bgt60trxx-test.yml`** - QEMU x86-64 test image
+- **`xensiv-bgt60trxx-rpi4.yml`** - Raspberry Pi 4 image
+
+### Scarthgap LTS (Yocto 5.0)
+- **`xensiv-bgt60trxx-test-scarthgap.yml`** - QEMU x86-64 test image  
+- **`xensiv-bgt60trxx-rpi4-scarthgap.yml`** - Raspberry Pi 4 image
+
+### Base Configurations
+- **`base-image.yml`** - Common base configuration for Kirkstone
+- **`base-image-scarthgap.yml`** - Common base configuration for Scarthgap
+
+## 🛠️ Build Scripts
+
+### kas-build.sh
+Main build script with comprehensive options:
+
+```bash
+./kas-build.sh [OPTIONS] [CONFIG_FILE]
+
+Options:
+  -d, --docker    Use Docker for containerized builds
+  -c, --clean     Clean build (force checkout)
+  -s, --sdk       Build SDK after image
+  -q, --qemu      Run QEMU after successful build (x86-64 only)
+  -v, --verbose   Enable verbose output
+  -h, --help      Show help message
+```
+
+Examples:
+```bash
+# Basic build
+./kas-build.sh
+
+# Docker build with clean checkout
+./kas-build.sh --docker --clean
+
+# Build with SDK and run QEMU
+./kas-build.sh --sdk --qemu
+
+# Build Raspberry Pi 4 image
+./kas-build.sh kas/xensiv-bgt60trxx-rpi4.yml
+```
+
+### validate-kas.sh
+Validation script for Kas configurations:
+
+```bash
+./validate-kas.sh [CONFIG_FILE...]
+
+# Validate all configurations
+./validate-kas.sh
+
+# Validate specific file
+./validate-kas.sh kas/xensiv-bgt60trxx-test.yml
+```
+
+## 🏗️ Manual Kas Usage
+
+### Basic Commands
+
+```bash
+# Build an image
 kas build kas/xensiv-bgt60trxx-test.yml
 
-# Run in QEMU
+# Build with Docker
+kas build --docker kas/xensiv-bgt60trxx-test.yml
+
+# Shell into build environment
+kas shell kas/xensiv-bgt60trxx-test.yml
+
+# Build SDK
+kas shell kas/xensiv-bgt60trxx-test.yml -c "bitbake xensiv-bgt60trxx-test-image -c populate_sdk"
+
+# Run QEMU (for x86-64 images)
 kas shell kas/xensiv-bgt60trxx-test.yml -c "runqemu qemux86-64 nographic"
 ```
 
-**Scarthgap LTS (Latest):**
-```bash
-# Build the image with latest Yocto LTS
-kas build kas/xensiv-bgt60trxx-test-scarthgap.yml
-
-# Run in QEMU
-kas shell kas/xensiv-bgt60trxx-test-scarthgap.yml -c "runqemu qemux86-64 nographic"
-```
-
-### Build Raspberry Pi 4 Image
-
-**Kirkstone LTS (Stable):**
-```bash
-# Build the image
-kas build kas/xensiv-bgt60trxx-rpi4.yml
-
-# Flash to SD card (replace /dev/sdX with your SD card device)
-sudo dd if=build/tmp/deploy/images/raspberrypi4-64/xensiv-bgt60trxx-test-image-raspberrypi4-64.wic \
-        of=/dev/sdX bs=4M status=progress conv=fsync
-```
-
-**Scarthgap LTS (Latest):**
-```bash
-# Build the image with latest Yocto LTS
-kas build kas/xensiv-bgt60trxx-rpi4-scarthgap.yml
-
-# Flash to SD card (replace /dev/sdX with your SD card device)
-sudo dd if=build/tmp/deploy/images/raspberrypi4-64/xensiv-bgt60trxx-test-image-raspberrypi4-64.wic \
-        of=/dev/sdX bs=4M status=progress conv=fsync
-```
-
-## Using Docker (Recommended)
-
-For a clean, reproducible build environment:
-
-**Kirkstone LTS:**
-```bash
-# Build with Docker
-kas-container build kas/xensiv-bgt60trxx-test.yml
-
-# Shell access with Docker
-kas-container shell kas/xensiv-bgt60trxx-test.yml
-```
-
-**Scarthgap LTS:**
-```bash
-# Build with Docker (latest LTS)
-kas-container build kas/xensiv-bgt60trxx-test-scarthgap.yml
-
-# Shell access with Docker
-kas-container shell kas/xensiv-bgt60trxx-test-scarthgap.yml
-```
-
-## Build Artifacts
-
-After a successful build, you'll find the following artifacts in `build/tmp/deploy/`:
-
-- **Images**: `images/<machine>/xensiv-bgt60trxx-test-image-<machine>.*`
-- **Packages**: `rpm/<arch>/xensiv-bgt60trxx-*`
-- **SDK**: `sdk/poky-glibc-*-toolchain-*.sh`
-
-## Build Performance & Caching
-
-### Cache Optimization
-
-Kas builds are significantly faster with proper caching. The build system uses multiple cache layers:
-
-1. **Downloads Cache** (`downloads/`): Source tarballs, git repositories
-2. **Shared State Cache** (`sstate-cache/`): Compiled packages and build artifacts
-3. **Repository Cache** (`.kas-cache/`): Yocto layer repositories
-
-### Expected Build Times
-
-| Build Type | Duration | Cache Status |
-|------------|----------|--------------|
-| First build | 45-90 min | Cold cache |
-| Subsequent builds | 10-20 min | Warm cache |
-| Incremental builds | 2-5 min | Hot cache |
-| CI builds (GitHub) | 15-30 min | Optimized cache |
-
-### Cache Management
-
-Use the provided cache information script:
+### Advanced Usage
 
 ```bash
-# Show cache statistics and optimization tips
-./kas/cache-info.sh
+# Force clean checkout
+kas build --force-checkout kas/xensiv-bgt60trxx-test.yml
+
+# Use specific build directory
+kas build --build-dir /path/to/build kas/xensiv-bgt60trxx-test.yml
+
+# Dump resolved configuration
+kas dump kas/xensiv-bgt60trxx-test.yml
 ```
 
-### Local Cache Setup
+## 🎯 Target Images
 
-For optimal local development:
+All configurations build the `xensiv-bgt60trxx-test-image` which includes:
 
-```bash
-# Create persistent cache directories
-mkdir -p ~/.kas-cache/{downloads,sstate}
+### Core Components
+- **xensiv-bgt60trxx** - Main library
+- **xensiv-bgt60trxx-examples** - Example applications
+- **xensiv-bgt60trxx-dev** - Development headers and tools
 
-# Set environment variables
-export DL_DIR=~/.kas-cache/downloads
-export SSTATE_DIR=~/.kas-cache/sstate
+### System Features
+- **systemd** - Modern init system
+- **SPI/I2C/GPIO support** - Hardware interfaces
+- **Development tools** - Debugging and profiling tools
+- **Package management** - Runtime package installation
 
-# Build with caching
-kas-container build kas/xensiv-bgt60trxx-test.yml
-```
+### Raspberry Pi Specific
+- **Device tree overlays** - SPI interface configuration
+- **WiFi firmware** - Broadcom wireless support
+- **GPIO utilities** - Hardware control tools
 
-## Testing the Library
+## 🔧 Configuration Structure
 
-### In QEMU
-
-1. **Boot the image**:
-   ```bash
-   kas shell kas/xensiv-bgt60trxx-test.yml -c "runqemu qemux86-64 nographic"
-   ```
-
-2. **Test the library** (in the QEMU guest):
-   ```bash
-   # Check library installation
-   pkg-config --modversion xensiv_bgt60trxx
-   
-   # Run basic example (will fail without hardware, but tests linking)
-   /usr/bin/examples/basic_example --help
-   
-   # Check library files
-   ls -la /usr/lib/libxensiv_bgt60trxx.*
-   ls -la /usr/include/xensiv_bgt60trxx*
-   ```
-
-### On Raspberry Pi 4
-
-1. **Flash and boot the image**
-2. **Connect BGT60TRxx sensor** via SPI
-3. **Run examples**:
-   ```bash
-   # Basic sensor detection
-   /usr/bin/examples/basic_example
-   
-   # FIFO data reading
-   /usr/bin/examples/fifo_example
-   
-   # Configuration example
-   /usr/bin/examples/config_example
-   ```
-
-## Customization
-
-### Adding Packages
-
-Edit the image recipe at `meta-xensiv-bgt60trxx/recipes-core/images/xensiv-bgt60trxx-test-image.bb`:
-
-```bitbake
-IMAGE_INSTALL += "\
-    your-additional-package \
-"
-```
-
-### Changing Target Machine
-
-Modify the `machine:` field in the Kas YAML file:
-
-```yaml
-machine: qemuarm64  # or beaglebone-yocto, etc.
-```
-
-### Custom Layer Integration
-
-Add your custom layer to the `repos:` section:
-
+### Repository Layout
 ```yaml
 repos:
-  my-custom-layer:
-    url: https://github.com/user/my-layer.git
-    refspec: main
+  # Yocto core layers
+  poky:
+    url: https://git.yoctoproject.org/poky
+    branch: kirkstone  # or scarthgap
     layers:
-      custom: .
+      meta:
+      meta-poky:
+      meta-yocto-bsp:
+
+  # OpenEmbedded layers
+  meta-openembedded:
+    url: https://git.openembedded.org/meta-openembedded
+    branch: kirkstone  # or scarthgap
+    layers:
+      meta-oe:
+      meta-python:
+
+  # Hardware-specific layers (RPi4 only)
+  meta-raspberrypi:
+    url: https://git.yoctoproject.org/meta-raspberrypi
+    branch: kirkstone  # or scarthgap
+    layers:
+      meta-raspberrypi:
+
+  # Local XENSIV layer
+  xensiv-bgt60trxx:
+    url: "."  # Current repository
+    branch: master
+    layers:
+      meta-xensiv-bgt60trxx:
 ```
 
-## Troubleshooting
+### Local Configuration
+Each configuration includes optimized settings for:
+- **Build performance** - Parallel builds and caching
+- **Hardware support** - Device-specific features
+- **Development tools** - Debugging and testing utilities
+- **Package selection** - Minimal but functional image
 
-### Build Failures
+## 🚀 CI/CD Integration
 
-1. **Clean build**:
-   ```bash
-   kas build --force-checkout kas/xensiv-bgt60trxx-test.yml
-   ```
+### GitHub Actions
+The repository includes automated CI/CD with:
+- **Multi-configuration builds** - All supported platforms
+- **Caching optimization** - Downloads, sstate, and repositories
+- **Artifact collection** - Images, SDKs, and packages
+- **QEMU testing** - Boot verification for x86-64 images
 
-2. **Check disk space**:
-   ```bash
-   df -h
-   ```
+### Build Matrix
+- Kirkstone LTS (QEMU x86-64, Raspberry Pi 4)
+- Scarthgap LTS (QEMU x86-64, Raspberry Pi 4)
 
-3. **Update Kas**:
-   ```bash
-   pip3 install --upgrade kas
-   ```
+## 📦 Build Artifacts
 
-### QEMU Issues
+After a successful build, you'll find:
 
-1. **Graphics problems**: Use `nographic` option
-2. **Network issues**: Check host firewall settings
-3. **Performance**: Increase RAM allocation in local.conf
+### Images
+- **`*.wic`** - Disk images for flashing
+- **`*.rootfs.tar.*`** - Root filesystem archives
 
-### Hardware Issues
+### SDK
+- **`*.sh`** - Self-extracting SDK installer
 
-1. **SPI not working**: Check device tree overlays
-2. **GPIO permissions**: Ensure user is in `gpio` group
-3. **Sensor detection**: Verify wiring and power supply
+### Packages
+- **RPM packages** - Individual component packages
 
-## Development Workflow
+### Locations
+```
+build/tmp/deploy/images/<MACHINE>/  # Images
+build/tmp/deploy/sdk/               # SDK installers
+build/tmp/deploy/rpm/               # RPM packages
+```
 
-### Interactive Development
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Repository reference errors in CI:**
+- Fixed by using native `kas` instead of `kas-container`
+- Local repository properly mounted in Docker builds
+
+**Disk space issues:**
+- Minimum 50GB recommended
+- Use `--clean` flag to remove previous builds
+- Configure shared sstate cache for multiple builds
+
+**Docker permission issues:**
+- Ensure user is in `docker` group
+- Use `sudo` if necessary for Docker commands
+
+**Missing dependencies:**
+- Install required host packages (see GitHub Actions workflow)
+- Use containerized builds to avoid host dependency issues
+
+### Debug Commands
 
 ```bash
-# Start development shell
+# Check configuration syntax
+./validate-kas.sh
+
+# Verbose build output
+./kas-build.sh --verbose
+
+# Shell into build environment
 kas shell kas/xensiv-bgt60trxx-test.yml
 
-# Inside the shell, you can:
-bitbake xensiv-bgt60trxx -c compile
-bitbake xensiv-bgt60trxx -c install
-bitbake xensiv-bgt60trxx-test-image
+# Check build logs
+less build/tmp/log/cooker/*/console-latest.log
 ```
 
-### SDK Generation
+## 📚 Additional Resources
 
-```bash
-# Build SDK for cross-compilation
-kas shell kas/xensiv-bgt60trxx-test.yml -c "bitbake xensiv-bgt60trxx-test-image -c populate_sdk"
+- [Kas Documentation](https://kas.readthedocs.io/)
+- [Yocto Project Documentation](https://docs.yoctoproject.org/)
+- [XENSIV BGT60TRxx Library](../README.md)
+- [BitBake User Manual](https://docs.yoctoproject.org/bitbake/)
 
-# Install SDK
-./build/tmp/deploy/sdk/poky-glibc-*-toolchain-*.sh
-```
+## 🤝 Contributing
 
-## Integration with CI/CD
+When adding new Kas configurations:
 
-Example GitHub Actions workflow:
-
-```yaml
-name: Yocto Build
-on: [push, pull_request]
-jobs:
-  yocto-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Kas
-        run: pip3 install kas
-      - name: Build Image
-        run: kas-container build kas/xensiv-bgt60trxx-test.yml
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: yocto-image
-          path: build/tmp/deploy/images/
-```
-
-## Support
-
-For issues related to:
-- **Kas configuration**: Check [Kas documentation](https://kas.readthedocs.io/)
-- **Yocto builds**: Check [Yocto Project documentation](https://docs.yoctoproject.org/)
-- **XENSIV library**: Open an issue in this repository
-
-## License
-
-This Kas configuration is provided under the same MIT license as the XENSIV™ BGT60TRxx library.
+1. **Follow naming convention**: `xensiv-bgt60trxx-<target>-<version>.yml`
+2. **Validate syntax**: Run `./validate-kas.sh` 
+3. **Test builds**: Verify both native and Docker builds
+4. **Update documentation**: Add to this README
+5. **Update CI**: Add to GitHub Actions matrix if needed
