@@ -8,7 +8,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=0835ade698e0bcf8506ecda2f7b4f302"
 DEPENDS = ""
 RDEPENDS:${PN} = ""
 
-SRC_URI = "git://github.com/DynamicDevices/sensor-xensiv-bgt60trxx.git;protocol=https;branch=main"
+SRC_URI = "git://github.com/DynamicDevices/sensor-xensiv-bgt60trxx.git;protocol=https;branch=master"
 SRCREV = "${AUTOREV}"
 
 PV = "1.1.1+git${SRCPV}"

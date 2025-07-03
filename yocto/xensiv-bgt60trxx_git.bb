@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=..."
 SRCREV = "${AUTOREV}"
 PV = "1.0.0+git${SRCPV}"
 
-SRC_URI = "git://github.com/DynamicDevices/sensor-xensiv-bgt60trxx.git;protocol=https;branch=main"
+SRC_URI = "git://github.com/DynamicDevices/sensor-xensiv-bgt60trxx.git;protocol=https;branch=master"
 
 S = "${WORKDIR}/git"
 
